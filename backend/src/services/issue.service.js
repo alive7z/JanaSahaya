@@ -17,6 +17,7 @@ import {
 import { hasVoted } from '../repositories/vote.repository.js';
 import { hasFollowed } from '../repositories/follow.repository.js';
 import { getSlaHours } from './sla.service.js';
+import { storedUploadPath } from '../utils/uploads.js';
 import * as notifier from './notification.service.js';
 
 // Contribution points
@@ -71,9 +72,9 @@ export async function createNewIssue({ input, userId, files }) {
     const [result] = await conn.execute(
       `INSERT INTO issues (
          title, description, category_id, reporter_id,
-         latitude, longitude, address, city, ward,
+         latitude, longitude, location_source, address, city, ward,
          status, priority, priority_score, department_id, resolution_deadline, last_activity_at
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'SUBMITTED', ?, ?, ?, ?, NOW())`,
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'SUBMITTED', ?, ?, ?, ?, NOW())`,
       [
         input.title,
         input.description,
@@ -81,6 +82,7 @@ export async function createNewIssue({ input, userId, files }) {
         userId,
         input.latitude,
         input.longitude,
+        input.locationSource,
         input.address ?? null,
         input.city ?? null,
         input.ward ?? null,
@@ -103,7 +105,7 @@ export async function createNewIssue({ input, userId, files }) {
         await conn.execute(
           `INSERT INTO issue_images (issue_id, filename, filepath, mime_type, size, uploaded_by)
            VALUES (?, ?, ?, ?, ?, ?)`,
-          [id, f.filename, f.path, f.mimetype, f.size, userId],
+          [id, f.filename, storedUploadPath(f.path), f.mimetype, f.size, userId],
         );
       }
     }
@@ -138,6 +140,7 @@ export async function createNewIssue({ input, userId, files }) {
     link: `/issue/${issueId}`,
     payload: { issueId },
   });
+  await notifier.emitIssueUpdate(issueId, 'issue:update', { issueId, action: 'created' });
 
   return {
     issueId,
@@ -209,7 +212,8 @@ export async function changeStatus({ issueId, toStatus, note, actor, actorId, re
   const issue = await getIssue(issueId);
   if (!issue) throw new AppError(404, 'Issue not found');
 
-  const actorName = actor === 'SYSTEM' ? 'SYSTEM' : (req.user.roles || []).map((r) => r.name)[0];
+  const roleNames = (req?.user?.roles || []).map((role) => role.name);
+  const actorName = actor === 'SYSTEM' ? 'SYSTEM' : roleNames.includes('ADMIN') ? 'ADMIN' : 'OFFICER';
   const departmentMatch =
     actorName === 'ADMIN' ||
     (actorName === 'OFFICER' && issue.department_id === req.user.departmentId);
@@ -238,7 +242,8 @@ export async function acceptByOfficer({ issueId, officerId, req }) {
   const issue = await getIssue(issueId);
   if (!issue) throw new AppError(404, 'Issue not found');
 
-  const actorName = (req.user.roles || []).map((r) => r.name)[0];
+  const roleNames = (req.user.roles || []).map((role) => role.name);
+  const actorName = roleNames.includes('ADMIN') ? 'ADMIN' : 'OFFICER';
   const departmentMatch =
     actorName === 'ADMIN' || (actorName === 'OFFICER' && issue.department_id === req.user.departmentId);
   if (!departmentMatch) throw new AppError(403, 'You can only manage issues in your department');
@@ -323,9 +328,18 @@ export async function acceptByOfficer({ issueId, officerId, req }) {
   return { from: issue.status, to: finalStatus };
 }
 
-export async function resolveIssueWithEvidence({ issueId, officerId, note, evidenceFiles }) {
+export async function resolveIssueWithEvidence({ issueId, officerId, note, evidenceFiles, req }) {
   const issue = await getIssue(issueId);
   if (!issue) throw new AppError(404, 'Issue not found');
+  const roleNames = (req?.user?.roles || []).map((role) => role.name);
+  if (!roleNames.includes('ADMIN')) {
+    if (String(issue.department_id) !== String(req?.user?.departmentId)) {
+      throw new AppError(403, 'You can only resolve issues in your department');
+    }
+    if (String(issue.assigned_officer_id) !== String(officerId)) {
+      throw new AppError(403, 'Only the assigned officer can resolve this issue');
+    }
+  }
   if (issue.status !== 'IN_PROGRESS') {
     throw new AppError(422, 'Issue must be IN_PROGRESS before it can be resolved');
   }
@@ -336,7 +350,7 @@ export async function resolveIssueWithEvidence({ issueId, officerId, note, evide
   // Resolve is transactional: resolution record + status + status history.
   const resolutionId = await transaction(async (conn) => {
     const id = await createResolution(
-      { issueId, officerId, note, imagePath: evidenceFiles[0].path },
+      { issueId, officerId, note, imagePath: storedUploadPath(evidenceFiles[0].path) },
       conn,
     );
     await writeStatusChange(conn, {
@@ -470,6 +484,9 @@ async function sendStatusNotifications({ issueId, issue, toStatus, fromStatus, n
 export async function assignIssueOfficerToIssue({ issueId, officerId, assignedBy, req }) {
   const issue = await getIssue(issueId);
   if (!issue) throw new AppError(404, 'Issue not found');
+  if (['RESOLVED', 'CLOSED', 'REJECTED', 'DUPLICATE'].includes(issue.status)) {
+    throw new AppError(422, `Cannot assign an issue in ${issue.status} state`);
+  }
 
   const officerRows = await query(
     `SELECT ur.user_id, ur.department_id FROM user_roles ur
@@ -484,7 +501,7 @@ export async function assignIssueOfficerToIssue({ issueId, officerId, assignedBy
   const assigned = await transaction(async (conn) => {
     const [result] = await conn.execute(
       `UPDATE issues
-         SET assigned_officer_id = ?, department_id = ?, last_activity_at = NOW()
+         SET assigned_officer_id = ?, department_id = ?, status = 'ASSIGNED', last_activity_at = NOW()
        WHERE id = ?`,
       [officerId, officerDept, issueId],
     );
@@ -508,6 +525,9 @@ export async function assignIssueOfficerToIssue({ issueId, officerId, assignedBy
     body: `${issue.title} has been assigned to you.`,
     link: `/issue/${issueId}`,
     payload: { issueId },
+  });
+  await notifier.emitIssueUpdate(issueId, 'issue:status', {
+    issueId, from: issue.status, to: 'ASSIGNED', officerId, action: 'assigned',
   });
 
   return { officerId, departmentId: assigned.officerDept };

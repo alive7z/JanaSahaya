@@ -1,4 +1,4 @@
--- CrowdSourced Civic Issues - MySQL 8.x schema
+-- JanaSahaya - MySQL 8.x schema
 -- Execute as root: mysql -u root -p < src/db/schema.sql
 -- or run: npm run db:setup
 
@@ -291,7 +291,7 @@ CREATE TABLE IF NOT EXISTS issue_escalations (
   escalation_level    INT UNSIGNED NOT NULL DEFAULT 1,
   reason              VARCHAR(500) NOT NULL,
   escalated_to_user_id BIGINT UNSIGNED NULL,
-  status              ENUM('OPEN','RESOLVED') NOT NULL DEFAULT 'OPEN',
+  status              ENUM('OPEN','ACKNOWLEDGED','RESOLVED') NOT NULL DEFAULT 'OPEN',
   created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   resolved_at         TIMESTAMP NULL,
   KEY idx_ie_issue (issue_id, status),

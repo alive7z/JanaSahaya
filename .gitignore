@@ -21,6 +21,14 @@ coverage/
 .env.*
 !.env.example
 
+# Secrets / TLS certificates (never commit Aiven CA or keys)
+*.pem
+*.key
+*.crt
+*.p12
+aiven-ca.pem
+secrets/
+
 # Uploads / runtime storage
 uploads/
 backend/uploads/

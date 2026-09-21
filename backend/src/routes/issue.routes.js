@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as issue from '../controllers/issue.controller.js';
-import { authenticate, requireRole, requireOfficerOfDepartment } from '../middleware/auth.middleware.js';
+import { authenticate, optionalAuthenticate, requireRole, requireOfficerOfDepartment, restrictDemoAdminToDemoIssues } from '../middleware/auth.middleware.js';
 import { issueImages } from '../middleware/upload.middleware.js';
 import { reportLimiter, commentLimiter, interactionLimiter } from '../middleware/rateLimiter.middleware.js';
 import {
@@ -21,12 +21,13 @@ const router = Router();
 // Public
 router.get('/', listQueryValidator, issue.list);
 router.get('/nearby', issue.nearby);
+router.get('/map', issue.map);
 router.post('/check-duplicates', authenticate, duplicateCheckValidator, issue.checkDuplicates);
 
 // Authenticated "my issues" lists (must precede /:id)
 router.get('/my', authenticate, issue.myIssues);
 
-router.get('/:id', idParamValidator, issue.detail);
+router.get('/:id', optionalAuthenticate, idParamValidator, issue.detail);
 
 // Citizen reporting (duplicate/spam/misinformation)
 router.post('/:id/report', authenticate, reportLimiter(), idParamValidator, reportValidator, issue.reportIssue);
@@ -54,6 +55,7 @@ router.patch(
   authenticate,
   requireOfficerOfDepartment,
   idParamValidator,
+  restrictDemoAdminToDemoIssues,
   issue.officerAccept,
 );
 router.patch(
@@ -61,6 +63,7 @@ router.patch(
   authenticate,
   requireRole('OFFICER', 'ADMIN'),
   statusValidator,
+  restrictDemoAdminToDemoIssues,
   issue.changeStatus,
 );
 router.post(
@@ -68,6 +71,7 @@ router.post(
   authenticate,
   requireRole('OFFICER', 'ADMIN'),
   requireOfficerOfDepartment,
+  restrictDemoAdminToDemoIssues,
   issueImages,
   resolveValidator,
   issue.officerResolve,
@@ -79,6 +83,7 @@ router.patch(
   authenticate,
   requireRole('ADMIN'),
   assignOfficerValidator,
+  restrictDemoAdminToDemoIssues,
   issue.assignOfficer,
 );
 

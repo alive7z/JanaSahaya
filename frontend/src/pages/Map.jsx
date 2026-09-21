@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import IssueMap from '../components/maps/IssueMap';
-import { Spinner } from '../components/common/Button';
+import { Link } from 'react-router-dom';
+import { EmptyState, Spinner } from '../components/common/Button';
 import { fetchNearby } from '../services/issues';
 import { getUserLocation } from '../utils/geo';
 import { DEFAULT_COORDS, DISTANCE_OPTIONS } from '../constants';
@@ -12,6 +13,7 @@ export default function Map() {
   const [center, setCenter] = useState(DEFAULT_COORDS.dehradun);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     getUserLocation().then((p) => {
@@ -21,14 +23,15 @@ export default function Map() {
 
   useEffect(() => {
     setLoading(true);
+    setFailed(false);
     fetchNearby({ lat: center[0], lng: center[1], distance })
       .then(setData)
-      .catch(() => setData({ issues: [] }))
+      .catch(() => { setFailed(true); setData({ issues: [] }); })
       .finally(() => setLoading(false));
   }, [center, distance]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
+    <div className="page-shell py-8">
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Civic issue map</h1>
@@ -54,11 +57,27 @@ export default function Map() {
         </div>
       </header>
 
-      <div className="card h-[70vh] overflow-hidden p-0">
+      <div className="card min-h-[560px] overflow-hidden p-0">
         {loading ? (
           <Spinner />
+        ) : failed ? (
+          <EmptyState
+            type="network"
+            title="We couldn’t load the map"
+            body="Check your connection and try again. Your filters are still saved."
+            action={<button type="button" className="btn-primary" onClick={() => setCenter((value) => [...value])}>Try again</button>}
+            className="min-h-[560px] border-0 shadow-none ring-0"
+          />
+        ) : !data?.issues?.length ? (
+          <EmptyState
+            illustration="map-empty"
+            title="No issues found nearby."
+            body="Looks like things are clear around this area."
+            action={<Link to="/report" className="btn-primary">Report an Issue</Link>}
+            className="min-h-[560px] border-0 shadow-none ring-0"
+          />
         ) : (
-          <IssueMap issues={data?.issues || []} lat={center[0]} lng={center[1]} zoom={13} />
+          <div className="h-[70vh]"><IssueMap issues={data.issues} lat={center[0]} lng={center[1]} zoom={13} /></div>
         )}
       </div>
 

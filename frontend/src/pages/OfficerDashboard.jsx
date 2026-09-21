@@ -44,8 +44,8 @@ export default function OfficerDashboard() {
     [issues],
   );
   const assigned = useMemo(
-    () => issues.filter((i) => ['ASSIGNED', 'IN_PROGRESS'].includes(i.status)),
-    [issues],
+    () => issues.filter((i) => ['ASSIGNED', 'IN_PROGRESS'].includes(i.status) && String(i.assigned_officer_id) === String(user?.id)),
+    [issues, user?.id],
   );
   const openInDept = useMemo(
     () => issues.filter((i) => ['SUBMITTED', 'ASSIGNED', 'UNDER_REVIEW', 'REOPENED'].includes(i.status)),

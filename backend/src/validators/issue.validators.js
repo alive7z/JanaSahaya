@@ -22,7 +22,10 @@ export const createIssueValidator = [
   body('longitude')
     .isFloat({ min: -180, max: 180 }).withMessage('longitude must be valid')
     .customSanitizer((v) => Number(v)),
-  body('address').optional({ values: 'falsy' }).trim().isLength({ max: 255 }),
+  body('locationSource')
+    .isIn(['current_location', 'map', 'manual'])
+    .withMessage('locationSource must be current_location, map, or manual'),
+  body('address').trim().notEmpty().withMessage('A resolved address or coordinate label is required').isLength({ max: 255 }),
   body('city').optional({ values: 'falsy' }).trim().isLength({ max: 100 }),
   body('ward').optional({ values: 'falsy' }).trim().isLength({ max: 100 }),
   validate,

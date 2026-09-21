@@ -30,6 +30,8 @@ export function initSocket(server) {
 
     socket.on('join-issue', (issueId) => socket.join(`issue:${issueId}`));
     socket.on('leave-issue', (issueId) => socket.leave(`issue:${issueId}`));
+    socket.on('join-map', () => socket.join('map:issues'));
+    socket.on('leave-map', () => socket.leave('map:issues'));
 
     socket.on('disconnect', () => {
       const set = userSockets.get(socket.userId);
@@ -65,6 +67,7 @@ export function emitToUsers(userIds, event, data) {
 export function emitToIssue(issueId, event, data) {
   if (!io) return;
   io.to(`issue:${issueId}`).emit(event, data);
+  io.to('map:issues').emit(event, data);
 }
 
 export function emitBroadcast(event, data) {

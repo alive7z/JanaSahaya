@@ -101,8 +101,8 @@ export async function fetchNearby({ lat, lng, distance = 1000 }) {
   return data.data;
 }
 
-export async function fetchMyIssues(tab = 'reported') {
-  const { data } = await api.get('/issues/my', { params: { tab } });
+export async function fetchMyIssues(tab = 'reported', page = 1) {
+  const { data } = await api.get('/issues/my', { params: { tab, page, limit: 12 } });
   return data.data;
 }
 

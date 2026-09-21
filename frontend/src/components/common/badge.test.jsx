@@ -20,11 +20,11 @@ describe('Badge', () => {
 describe('StatusBadge / PriorityBadge', () => {
   it('labels known statuses from metadata', () => {
     render(<StatusBadge status="IN_PROGRESS" />);
-    expect(screen.getByText('In progress')).toBeInTheDocument();
+    expect(screen.getByText('In Progress')).toBeInTheDocument();
   });
-  it('falls back to the raw status string', () => {
-    render(<StatusBadge status="WEIRD" />);
-    expect(screen.getByText('WEIRD')).toBeInTheDocument();
+  it('humanises an unknown status value instead of showing the raw enum', () => {
+    render(<StatusBadge status="WEIRD_STATUS" />);
+    expect(screen.getByText('Weird Status')).toBeInTheDocument();
   });
   it('labels priorities from metadata', () => {
     render(<PriorityBadge priority="CRITICAL" />);

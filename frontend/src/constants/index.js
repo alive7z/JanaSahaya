@@ -1,8 +1,8 @@
 export const STATUS_META = {
   SUBMITTED: { label: 'Submitted', classes: 'bg-slate-100 text-slate-700', order: 0 },
-  UNDER_REVIEW: { label: 'Under review', classes: 'bg-amber-100 text-amber-800', order: 1 },
+  UNDER_REVIEW: { label: 'Under Review', classes: 'bg-amber-100 text-amber-800', order: 1 },
   ASSIGNED: { label: 'Assigned', classes: 'bg-sky-100 text-sky-800', order: 2 },
-  IN_PROGRESS: { label: 'In progress', classes: 'bg-indigo-100 text-indigo-800', order: 3 },
+  IN_PROGRESS: { label: 'In Progress', classes: 'bg-indigo-100 text-indigo-800', order: 3 },
   REOPENED: { label: 'Reopened', classes: 'bg-orange-100 text-orange-800', order: 4 },
   RESOLVED: { label: 'Resolved', classes: 'bg-emerald-100 text-emerald-800', order: 5 },
   CLOSED: { label: 'Closed', classes: 'bg-green-100 text-green-900', order: 6 },
@@ -33,6 +33,7 @@ export const DISTANCE_OPTIONS = [
   { value: 1000, label: 'Within 1 km' },
   { value: 2000, label: 'Within 2 km' },
   { value: 5000, label: 'Within 5 km' },
+  { value: 'all', label: 'All Issues' },
 ];
 
 export const DEFAULT_COORDS = {
@@ -41,3 +42,21 @@ export const DEFAULT_COORDS = {
 
 export const API_URL = '/api/v1';
 export const MEDIA_URL = '/uploads';
+
+export const DEMO_ACCOUNTS = {
+  enabled: String(import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS ?? (import.meta.env.DEV ? 'true' : 'false')) === 'true',
+  citizenEmail: import.meta.env.VITE_DEMO_CITIZEN_EMAIL || 'citizen@janasahaya.demo',
+  adminEmail: import.meta.env.VITE_DEMO_ADMIN_EMAIL || 'admin@janasahaya.demo',
+  password: import.meta.env.VITE_DEMO_PASSWORD || (import.meta.env.DEV ? 'Demo@123' : ''),
+};
+
+export const DEMO_CITIZEN_AVATAR = '/images/citizen-demo-avatar.png';
+export const DEMO_ADMIN_AVATAR = '/images/admin-demo-avatar.png';
+
+export function demoAvatar(email) {
+  if (!email) return null;
+  const e = email.toLowerCase();
+  if (e === DEMO_ACCOUNTS.citizenEmail.toLowerCase()) return DEMO_CITIZEN_AVATAR;
+  if (e === DEMO_ACCOUNTS.adminEmail.toLowerCase()) return DEMO_ADMIN_AVATAR;
+  return null;
+}

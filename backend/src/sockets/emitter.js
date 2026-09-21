@@ -7,7 +7,7 @@ const userSockets = new Map(); // userId -> Set<socketId>
 
 export function initSocket(server) {
   io = new Server(server, {
-    cors: { origin: env.clientOrigin, credentials: true },
+    cors: { origin: env.clientOrigins, credentials: true },
   });
 
   io.use((socket, next) => {

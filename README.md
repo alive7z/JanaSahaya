@@ -1,6 +1,6 @@
 <div align="center">
 
-# JanaSahaya
+# Jana-Sahaya
 
 ### A transparent, real-time civic issue reporting and resolution platform
 

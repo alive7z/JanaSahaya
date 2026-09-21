@@ -5,19 +5,23 @@ import * as authService from '../services/auth.service.js';
 import { countUnread } from '../repositories/notification.repository.js';
 import env from '../config/env.js';
 
-const REFRESH_COOKIE = 'civic_refresh';
+const refreshCookieOptions = () => ({
+  httpOnly: true,
+  sameSite: env.cookie.sameSite,
+  secure: env.cookie.secure,
+  path: '/api/v1/auth',
+  ...(env.cookie.domain ? { domain: env.cookie.domain } : {}),
+});
 
 function setRefreshCookie(res, token) {
-  res.cookie(REFRESH_COOKIE, token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: !env.isDev,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+  res.cookie(env.cookie.name, token, {
+    ...refreshCookieOptions(),
+    maxAge: env.cookie.maxAgeDays * 24 * 60 * 60 * 1000,
   });
 }
 
 function clearRefreshCookie(res) {
-  res.clearCookie(REFRESH_COOKIE, { httpOnly: true, sameSite: 'lax' });
+  res.clearCookie(env.cookie.name, refreshCookieOptions());
 }
 
 export const register = asyncHandler(async (req, res) => {
@@ -45,7 +49,7 @@ export const login = asyncHandler(async (req, res) => {
 });
 
 export const refresh = asyncHandler(async (req, res) => {
-  const token = req.cookies?.[REFRESH_COOKIE] || req.body?.refreshToken;
+  const token = req.cookies?.[env.cookie.name] || req.body?.refreshToken;
   if (!token) throw new AppError(401, 'Refresh token missing');
 
   const { accessToken, refreshToken, user, roles } = await authService.refresh({
@@ -58,7 +62,7 @@ export const refresh = asyncHandler(async (req, res) => {
 });
 
 export const logout = asyncHandler(async (req, res) => {
-  const token = req.cookies?.[REFRESH_COOKIE] || req.body?.refreshToken;
+  const token = req.cookies?.[env.cookie.name] || req.body?.refreshToken;
   const authHeader = req.headers.authorization || '';
   const accessToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
   await authService.logout({ refreshToken: token, accessToken });
@@ -67,7 +71,7 @@ export const logout = asyncHandler(async (req, res) => {
 });
 
 export const logoutOtherSessions = asyncHandler(async (req, res) => {
-  const token = req.cookies?.[REFRESH_COOKIE] || req.body?.refreshToken;
+  const token = req.cookies?.[env.cookie.name] || req.body?.refreshToken;
   const revoked = await authService.logoutOtherSessions({
     userId: req.user.id,
     currentRefreshToken: token,

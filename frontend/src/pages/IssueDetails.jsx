@@ -17,6 +17,7 @@ import { fetchIssue } from '../services/issues';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { formatDate, deadlineLabel } from '../utils/formatters';
+import { MEDIA_URL } from '../constants';
 
 const detailIcon = L.divIcon({
   html: '<div style="width:20px;height:20px;border-radius:50%;background:#1b6ef5;border:3px solid white;box-shadow:0 1px 6px rgba(0,0,0,.5)"></div>',
@@ -152,7 +153,7 @@ export default function IssueDetails() {
                     }`}
                   >
                     <img
-                      src={`/uploads/${img.filepath.replace(/^uploads\//, '')}`}
+                      src={`${MEDIA_URL}/${img.filepath.replace(/^uploads\//, '')}`}
                       alt={`Evidence ${i + 1}`}
                       className="h-28 w-full object-cover"
                       loading="lazy"
@@ -162,7 +163,7 @@ export default function IssueDetails() {
               </div>
               {activeImage != null && images[activeImage] && (
                 <img
-                  src={`/uploads/${images[activeImage].filepath.replace(/^uploads\//, '')}`}
+                  src={`${MEDIA_URL}/${images[activeImage].filepath.replace(/^uploads\//, '')}`}
                   alt="Selected evidence"
                   className="mt-3 h-72 w-full rounded-lg object-cover"
                 />

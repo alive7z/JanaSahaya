@@ -21,10 +21,22 @@ import swaggerUi from 'swagger-ui-express';
 
 const app = express();
 
-app.set('trust proxy', 1);
+app.set('trust proxy', env.trustProxy);
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'blob:', 'https://*.tile.openstreetmap.org'],
+        connectSrc: ["'self'", 'https://nominatim.openstreetmap.org', 'wss:', 'ws:'],
+        fontSrc: ["'self'", 'data:'],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+      },
+    },
   }),
 );
 app.use(
@@ -105,7 +117,7 @@ app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/meta', metaRoutes);
 app.use('/api/docs', docsRoutes);
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customSiteTitle: 'Civic Issues API Docs',
+  customSiteTitle: 'JanaSahaya API Docs',
   swaggerOptions: { persistAuthorization: true },
 }));
 

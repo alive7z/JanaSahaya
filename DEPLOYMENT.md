@@ -2,6 +2,30 @@
 
 This guide targets one Ubuntu VPS with Docker Compose and a host Nginx TLS reverse proxy. The only published Compose port is the frontend on `127.0.0.1:8080`; the Express API and MySQL are reachable only inside the Compose network.
 
+## 0. Managed cloud (Vercel + Render + Aiven)
+
+The same Docker image also deploys to a managed stack. Full details are in the
+README [Deployment](README.md#deployment) section; the short runbook is:
+
+1. **Aiven MySQL 8.4** — create the service and note host, port, user, password.
+   Keep `DB_NAME=defaultdb`. TLS is required; download the CA certificate.
+2. **Render Web Service** — Runtime **Docker**, Root Directory `backend`, Dockerfile
+   `./Dockerfile`, Health Check Path `/health`. Add the Aiven CA as a Secret File
+   mounted at `/etc/secrets/aiven-ca.pem`, set `DB_SSL_CA_PATH` to that path, and
+   copy the remaining keys from [`backend/.env.example`](backend/.env.example).
+   The container runs `node src/db/setup.js` then the server on every boot.
+3. **Vercel** — Root Directory `frontend`, Framework **Vite**, Output `dist`.
+   Set `VITE_API_URL=https://<render>.onrender.com/api/v1`,
+   `VITE_SOCKET_URL=https://<render>.onrender.com` and the demo variables from
+   [`frontend/.env.example`](frontend/.env.example).
+4. **Close the loop** — set Render `CLIENT_ORIGIN` to the Vercel origin
+   (`COOKIE_SAME_SITE=none`, `COOKIE_SECURE=true`) and redeploy. Verify with
+   `GET /health`, `GET /ready`, and a demo login from the Vercel URL.
+
+Uploads on Render's filesystem are **ephemeral** (lost on redeploy). For durable
+evidence images, attach a Render Persistent Disk and point `UPLOAD_DIR` at its
+mount path, or move uploads to object storage.
+
 ## 1. Prepare the server and repository
 
 Install Docker Engine with the Compose plugin, Nginx, Certbot, Git, and a firewall. Point the domain's DNS A/AAAA records at the VPS, then:

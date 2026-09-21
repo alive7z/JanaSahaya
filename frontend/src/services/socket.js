@@ -1,4 +1,5 @@
 import { io } from 'socket.io-client';
+import { SOCKET_URL } from '../constants';
 
 let socket = null;
 const issueRooms = new Set();
@@ -12,8 +13,9 @@ export function initSocket(accessToken) {
     return socket;
   }
 
-  socket = io('/', {
+  socket = io(SOCKET_URL || '/', {
     auth: { token: accessToken },
+    withCredentials: true,
     transports: ['websocket', 'polling'],
   });
 

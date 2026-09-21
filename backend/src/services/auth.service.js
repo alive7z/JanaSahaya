@@ -166,12 +166,12 @@ export async function logout({ refreshToken, accessToken }) {
 
 /** Revoke every refresh session for the user except the one making the request. */
 export async function logoutOtherSessions({ userId, currentRefreshToken }) {
-  const [{ affectedRows }] = await query(
+  const result = await query(
     `UPDATE refresh_tokens SET revoked_at = NOW()
      WHERE user_id = ? AND revoked_at IS NULL AND token_hash <> ?`,
     [userId, currentRefreshToken ? hashToken(currentRefreshToken) : ''],
   );
-  return affectedRows;
+  return result.affectedRows;
 }
 
 export async function changePassword(userId, { oldPassword, newPassword }) {

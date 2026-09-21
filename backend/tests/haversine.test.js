@@ -24,3 +24,12 @@ test('haversineScore buckets distances', () => {
   assert.equal(haversineScore(300), 10);
   assert.equal(haversineScore(1000), 0);
 });
+
+test('haversine preserves exact radius boundaries before display rounding', () => {
+  const latitudeDeltaFor500m = (500 / 6371000) * (180 / Math.PI);
+  const boundary = haversine(0, 0, latitudeDeltaFor500m, 0);
+  const outside = haversine(0, 0, latitudeDeltaFor500m * 1.001, 0);
+  assert.ok(Math.abs(boundary - 500) < 0.0001, `boundary was ${boundary}`);
+  assert.ok(boundary <= 500);
+  assert.ok(outside > 500);
+});

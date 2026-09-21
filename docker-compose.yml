@@ -1,0 +1,73 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: civic-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-@Live404}
+      MYSQL_DATABASE: ${MYSQL_DB_NAME:-civic_issues}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD:-@Live404}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # Host MySQL already uses 3306; expose the stacked DB on 3307.
+    ports:
+      - "3307:3306"
+    networks:
+      - civic
+
+  backend:
+    build: ./backend
+    container_name: civic-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-@Live404}
+      DB_NAME: ${MYSQL_DB_NAME:-civic_issues}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev_access_secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev_refresh_secret}
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:8080}
+      # Stricter production-ish limits (overridable per environment).
+      RATE_LIMIT_AUTH_MAX: ${RATE_LIMIT_AUTH_MAX:-20}
+      RATE_LIMIT_REGISTER_MAX: ${RATE_LIMIT_REGISTER_MAX:-5}
+      LOG_PRETTY: "false"
+    volumes:
+      - uploads_data:/app/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    ports:
+      - "4000:4000"
+    networks:
+      - civic
+
+  frontend:
+    build: ./frontend
+    container_name: civic-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    networks:
+      - civic
+
+volumes:
+  mysql_data:
+  uploads_data:
+
+networks:
+  civic:

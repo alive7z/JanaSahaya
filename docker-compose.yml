@@ -32,9 +32,12 @@ services:
       DB_USER: ${DB_USER:-janasetu}
       DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
       DB_NAME: ${DB_NAME:-civic_issues}
+      DB_SSL_CA_PATH: ${DB_SSL_CA_PATH:-}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-5}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in .env}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in .env}
       CLIENT_ORIGIN: ${CLIENT_ORIGIN:?Set CLIENT_ORIGIN to the public HTTPS origin}
+      TRUST_PROXY: ${TRUST_PROXY:-1}
       COOKIE_NAME: ${COOKIE_NAME:-civic_refresh}
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
       COOKIE_SAME_SITE: ${COOKIE_SAME_SITE:-lax}

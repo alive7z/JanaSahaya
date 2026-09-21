@@ -8,23 +8,20 @@ import { query } from './src/config/database.js';
 const server = http.createServer(app);
 initSocket(server);
 
-server.listen(env.port, () => {
-  logger.info(
-    `Civic Issues API running on http://localhost:${env.port} (${env.nodeEnv})`,
-  );
-});
-
-async function verifyDb() {
+async function start() {
   try {
     await query('SELECT 1');
     logger.info('MySQL connection verified');
+    server.listen(env.port, () => {
+      logger.info({ port: env.port, environment: env.nodeEnv }, 'JanaSahaya API started');
+    });
   } catch (err) {
-    logger.error('Cannot reach MySQL: %s', err.message);
-    logger.info('Run `npm run db:setup` after configuring backend/.env');
+    logger.fatal({ err }, 'Cannot reach MySQL; refusing to start');
+    process.exitCode = 1;
   }
 }
 
-verifyDb();
+await start();
 
 process.on('SIGTERM', () => {
   logger.info('Shutting down... live sockets: %d', liveConnections());

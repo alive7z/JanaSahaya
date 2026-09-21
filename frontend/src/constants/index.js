@@ -40,8 +40,21 @@ export const DEFAULT_COORDS = {
   dehradun: [30.3165, 78.0322],
 };
 
-export const API_URL = '/api/v1';
-export const MEDIA_URL = '/uploads';
+// API base. In local development and the Docker/Nginx image this stays relative
+// so the Vite dev proxy / Nginx can forward it. On Vercel set VITE_API_URL to
+// the Render backend, e.g. https://janasahaya-api.onrender.com/api/v1
+export const API_URL = import.meta.env.VITE_API_URL || '/api/v1';
+
+// Backend origin (no /api/v1) used to derive uploads and Socket.IO when set.
+const API_ORIGIN = (import.meta.env.VITE_API_URL || '').replace(/\/api\/v1\/?$/, '');
+
+// Socket.IO endpoint. Defaults to same-origin (Vite proxy / Nginx) and follows
+// VITE_SOCKET_URL on Vercel.
+export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || API_ORIGIN || '';
+
+// Uploaded media base. Defaults to the same origin in dev/Docker, or the Render
+// backend origin when VITE_API_URL is configured.
+export const MEDIA_URL = import.meta.env.VITE_MEDIA_URL || `${API_ORIGIN}/uploads`;
 
 export const DEMO_ACCOUNTS = {
   enabled: String(import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS ?? (import.meta.env.DEV ? 'true' : 'false')) === 'true',

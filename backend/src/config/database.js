@@ -1,6 +1,7 @@
 import mysql from 'mysql2/promise';
 import env from './env.js';
 import logger from '../utils/logger.js';
+import { buildSslConfig } from './ssl.js';
 
 const pool = mysql.createPool({
   host: env.db.host,
@@ -8,8 +9,14 @@ const pool = mysql.createPool({
   user: env.db.user,
   password: env.db.password,
   database: env.db.database,
+  ssl: buildSslConfig(),
   waitForConnections: true,
   connectionLimit: env.db.connectionLimit,
+  // Keep a small pool warm for the free Render instance.
+  maxIdle: Math.min(env.db.connectionLimit, 5),
+  idleTimeout: 60000,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000,
   charset: 'utf8mb4',
   decimalNumbers: true,
   namedPlaceholders: false,

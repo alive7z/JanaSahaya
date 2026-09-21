@@ -32,3 +32,8 @@ export async function changePassword(payload) {
   const { data } = await api.patch('/auth/me/password', payload);
   return data.data;
 }
+
+export async function logoutOthers() {
+  const { data } = await api.post('/auth/logout-others');
+  return data.data;
+}

@@ -41,7 +41,12 @@ app.use(
 );
 app.use(
   cors({
-    origin: env.clientOrigin,
+    origin(origin, callback) {
+      // Allow same-origin/non-browser clients (no Origin header) and the
+      // configured allow-list. Never fall back to a wildcard with credentials.
+      if (!origin || env.clientOrigins.includes(origin)) return callback(null, true);
+      return callback(null, false);
+    },
     credentials: true,
   }),
 );
@@ -94,17 +99,15 @@ app.use(
 app.use('/uploads', express.static(env.uploadDir));
 app.use('/api/v1', apiLimiter());
 
-app.get('/health', (_req, res) =>
-  res.json({ success: true, status: 'ok', uptime: process.uptime() }),
-);
+app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 app.get('/ready', async (_req, res) => {
   try {
     await query('SELECT 1');
-    res.json({ status: 'ok', database: 'connected' });
+    res.json({ status: 'ready', database: 'connected' });
   } catch (err) {
     logger.error({ err }, 'readiness check failed');
-    res.status(503).json({ status: 'error', database: 'disconnected' });
+    res.status(503).json({ status: 'unavailable', database: 'disconnected' });
   }
 });
 

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users, AlertTriangle, TrendingUp, Timer, Building2, FileText, ShieldAlert,
-  Briefcase, Pencil, Ban, CheckCircle2, XCircle,
+  Briefcase, Pencil, Ban, CheckCircle2, XCircle, MapPinned,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -24,12 +24,17 @@ import {
   adminReports, adminModerate, adminIssues, adminOfficers, adminSlaRules,
   adminUpdateSlaRule, adminUpdateCategory, adminIssuesReassign, adminStatusOverride,
   adminToggleBan,
+  adminMapIssues,
 } from '../services/admin';
 import Illustration from '../components/common/Illustration';
+import IssueMap from '../components/maps/IssueMap';
+import { DEFAULT_COORDS, PRIORITY_META, STATUS_META } from '../constants';
+import { formatLabel } from '../utils/formatters';
+import { useSocket } from '../context/SocketContext';
 
-const PIE_COLORS = ['#0ea5e9', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#64748b'];
+const PIE_COLORS = ['#1b6ef5', '#f59e0b', '#59b0ff', '#ef4444', '#8b5cf6', '#64748b'];
 
-const TABS = ['overview', 'issues', 'users', 'officers', 'audit', 'sla', 'moderation', 'referential'];
+const TABS = ['overview', 'issues', 'map', 'users', 'officers', 'audit', 'sla', 'moderation', 'referential'];
 
 export default function AdminDashboard() {
   const toast = useToast();
@@ -43,14 +48,14 @@ export default function AdminDashboard() {
 
   return (
     <div className="page-shell py-8">
-      <section className="relative grid min-h-52 items-center overflow-hidden rounded-3xl bg-slate-950 px-7 py-8 text-white shadow-soft sm:px-9 lg:grid-cols-[1fr_300px]">
+      <section className="relative grid min-h-52 items-center overflow-hidden rounded-3xl bg-green-600 px-7 py-8 text-white shadow-soft sm:px-9 lg:grid-cols-[1fr_300px]">
         <div className="absolute right-0 top-0 h-64 w-64 opacity-20 dot-pattern" />
         <div className="relative">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-300">JanaSetu Administration</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-white">JanaSahaya Administration</p>
           <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">Administration Command Center</h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">Monitor reports, coordinate departments and track civic issue resolution.</p>
         </div>
-        <Illustration name="admin-dashboard" alt="Administrator monitoring civic analytics" eager className="relative ml-auto hidden w-64 lg:block" />
+        <Illustration name="admin-command-center" alt="Administrator monitoring civic analytics" eager className="relative ml-auto hidden w-64 lg:block" />
       </section>
 
       <div className="mt-4 flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1">
@@ -58,6 +63,7 @@ export default function AdminDashboard() {
           <button key={t} className={nav(t)} onClick={() => setTab(t)}>
             {t === 'overview' && <TrendingUp className="h-4 w-4" />}
             {t === 'issues' && <FileText className="h-4 w-4" />}
+            {t === 'map' && <MapPinned className="h-4 w-4" />}
             {t === 'users' && <Users className="h-4 w-4" />}
             {t === 'officers' && <Briefcase className="h-4 w-4" />}
             {t === 'audit' && <FileText className="h-4 w-4" />}
@@ -71,6 +77,7 @@ export default function AdminDashboard() {
 
       {tab === 'overview' && (data ? <OverviewTab stats={data.stats} toast={toast} /> : <Spinner />)}
       {tab === 'issues' && <IssuesTab toast={toast} />}
+      {tab === 'map' && <AdminMapTab toast={toast} />}
       {tab === 'users' && <UsersTab toast={toast} />}
       {tab === 'officers' && <OfficersTab toast={toast} />}
       {tab === 'audit' && <AuditTab toast={toast} />}
@@ -95,7 +102,7 @@ function OverviewTab({ stats, toast }) {
     issues: Number(d.count),
   }));
   const priority = (charts?.overview?.priorityDistribution || []).map((d) => ({
-    name: d.priority || (d.id ? `P${d.id}` : 'Unknown'),
+    name: formatLabel(d.priority) || (d.id ? `P${d.id}` : 'Unknown'),
     value: Number(d.count),
   }));
   const dept = (charts?.dept?.departments || []).map((d) => ({
@@ -130,14 +137,14 @@ function OverviewTab({ stats, toast }) {
                 <AreaChart data={daily}>
                   <defs>
                     <linearGradient id="fillDaily" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#1b6ef5" stopOpacity={0.35} />
+                      <stop offset="100%" stopColor="#1b6ef5" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
                   <YAxis allowDecimals={false} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={28} />
                   <Tooltip />
-                  <Area type="monotone" dataKey="issues" stroke="#0ea5e9" fill="url(#fillDaily)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="issues" stroke="#1b6ef5" fill="url(#fillDaily)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -167,8 +174,8 @@ function OverviewTab({ stats, toast }) {
                   <YAxis allowDecimals={false} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={28} />
                   <Tooltip />
                   <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="total" name="Total" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="resolved" name="Resolved" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="total" name="Total" fill="#1b6ef5" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="resolved" name="Resolved" fill="#59b0ff" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -179,18 +186,80 @@ function OverviewTab({ stats, toast }) {
   );
 }
 
+function AdminMapTab({ toast }) {
+  const [data, setData] = useState(null);
+  const [departments, setDepartments] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [filters, setFilters] = useState({ status: '', category_id: '', priority: '', department_id: '', created_from: '', created_to: '' });
+  const [reloadKey, setReloadKey] = useState(0);
+  const { subscribe, joinMapRoom, leaveMapRoom } = useSocket();
+
+  useEffect(() => {
+    Promise.all([adminDepartments(), adminCategories()])
+      .then(([departmentRows, categoryRows]) => { setDepartments(departmentRows); setCategories(categoryRows); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const params = Object.fromEntries(Object.entries(filters).filter(([, value]) => value));
+    adminMapIssues(params).then(setData).catch((error) => toast.error(error, 'Could not load admin map'));
+  }, [filters, reloadKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    joinMapRoom();
+    const refresh = () => setReloadKey((value) => value + 1);
+    const unsubscribers = ['issue:update', 'issue:status', 'issue:vote'].map((event) => subscribe(event, refresh));
+    return () => { unsubscribers.forEach((unsubscribe) => unsubscribe()); leaveMapRoom(); };
+  }, [joinMapRoom, leaveMapRoom, subscribe]);
+
+  const field = (key) => ({
+    value: filters[key],
+    onChange: (event) => setFilters((current) => ({ ...current, [key]: event.target.value })),
+  });
+
+  return (
+    <div className="mt-6 space-y-3">
+      <div className="card grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-6">
+        <label><span className="label">Status</span><select className="input" {...field('status')}><option value="">All</option>{Object.entries(STATUS_META).map(([value, item]) => <option key={value} value={value}>{item.label}</option>)}</select></label>
+        <label><span className="label">Category</span><select className="input" {...field('category_id')}><option value="">All</option>{categories.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+        <label><span className="label">Priority</span><select className="input" {...field('priority')}><option value="">All</option>{Object.entries(PRIORITY_META).map(([value, item]) => <option key={value} value={value}>{item.label}</option>)}</select></label>
+        <label><span className="label">Department</span><select className="input" {...field('department_id')}><option value="">All</option>{departments.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+        <label><span className="label">From</span><input type="date" className="input" {...field('created_from')} /></label>
+        <label><span className="label">To</span><input type="date" className="input" {...field('created_to')} /></label>
+      </div>
+      <div className="card overflow-hidden p-0">
+        {!data ? <Spinner label="Loading mapped reports…" /> : data.issues?.length ? (
+          <><div className="border-b border-slate-100 px-4 py-3 text-sm text-slate-600">{data.count} mapped report{data.count === 1 ? '' : 's'}</div><div className="h-[68vh]"><IssueMap issues={data.issues} lat={DEFAULT_COORDS.dehradun[0]} lng={DEFAULT_COORDS.dehradun[1]} /></div></>
+        ) : <EmptyState compact illustration="admin-map-empty" title="No mapped issues match these filters." body="Change or clear the filters to see more reports." />}
+      </div>
+    </div>
+  );
+}
+
 function IssuesTab({ toast }) {
   const [rows, setRows] = useState(null);
   const [officers, setOfficers] = useState([]);
+  const [loadError, setLoadError] = useState(false);
   const [filters, setFilters] = useState({ search: '', status: '', departmentId: '', priority: '' });
   const [page, setPage] = useState(1);
   const [action, setAction] = useState(null); // { issue, mode: 'status' | 'reassign' }
 
   const load = () => {
-    adminIssues({ ...filters, page }).then(setRows).catch((e) => toast.error(e, 'Could not load issues'));
+    setLoadError(false);
+    adminIssues({ ...filters, page })
+      .then(setRows)
+      .catch((e) => {
+        setLoadError(true);
+        setRows({ issues: [], total: 0, page: 1, pages: 0, summary: null });
+        toast.error(e, 'Could not load issues');
+      });
   };
   useEffect(() => { load(); }, [page, filters.status, filters.departmentId, filters.priority]);
-  useEffect(() => { adminOfficers().then(setOfficers).catch(() => {}); }, []);
+  useEffect(() => {
+    adminOfficers()
+      .then((items) => setOfficers(Array.isArray(items) ? items : []))
+      .catch(() => setOfficers([]));
+  }, []);
 
   const submitAction = async () => {
     if (!action) return;
@@ -207,11 +276,29 @@ function IssuesTab({ toast }) {
     } catch (e) { toast.error(e); }
   };
 
-  const search = () => { setPage(1); adminIssues({ ...filters, page: 1 }).then(setRows).catch(() => {}); };
+  const search = () => {
+    setPage(1);
+    setLoadError(false);
+    adminIssues({ ...filters, page: 1 })
+      .then(setRows)
+      .catch((e) => {
+        setLoadError(true);
+        setRows({ issues: [], total: 0, page: 1, pages: 0, summary: null });
+        toast.error(e, 'Could not load issues');
+      });
+  };
 
   if (!rows) return <Spinner />;
+  const issues = Array.isArray(rows.issues) ? rows.issues : [];
+  const availableOfficers = Array.isArray(officers) ? officers : [];
   return (
     <div className="mt-6">
+      {loadError && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-800 ring-1 ring-rose-200">
+          <span>Could not load the issue list.</span>
+          <Button size="sm" variant="secondary" onClick={load}>Try again</Button>
+        </div>
+      )}
       <div className="card flex flex-wrap items-end gap-3 p-4">
         <label className="block flex-1 min-w-[180px]">
           <span className="label">Search</span>
@@ -222,14 +309,14 @@ function IssuesTab({ toast }) {
           <span className="label">Status</span>
           <select className="input" value={filters.status} onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}>
             <option value="">All statuses</option>
-            {['SUBMITTED', 'UNDER_REVIEW', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'REOPENED', 'CLOSED', 'REJECTED', 'DUPLICATE'].map((s) => <option key={s}>{s}</option>)}
+            {Object.entries(STATUS_META).map(([value, item]) => <option key={value} value={value}>{item.label}</option>)}
           </select>
         </label>
         <label className="block">
           <span className="label">Priority</span>
           <select className="input" value={filters.priority} onChange={(e) => setFilters((f) => ({ ...f, priority: e.target.value }))}>
             <option value="">All priorities</option>
-            {['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map((p) => <option key={p}>{p}</option>)}
+            {Object.entries(PRIORITY_META).map(([value, item]) => <option key={value} value={value}>{item.label}</option>)}
           </select>
         </label>
         <Button onClick={search}>Filter</Button>
@@ -239,7 +326,7 @@ function IssuesTab({ toast }) {
         <div className="mt-3 flex flex-wrap gap-2 text-xs">
           <Badge>Total {rows.summary.total ?? 0}</Badge>
           <Badge>Open {rows.summary.open ?? 0}</Badge>
-          <Badge>In progress {rows.summary.inProgress ?? 0}</Badge>
+          <Badge>In Progress {rows.summary.inProgress ?? 0}</Badge>
           <Badge>Resolved {rows.summary.resolved ?? 0}</Badge>
           <Badge>Submitted {rows.summary.submitted ?? 0}</Badge>
         </div>
@@ -259,14 +346,14 @@ function IssuesTab({ toast }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {(rows.issues || []).map((i) => (
+            {issues.map((i) => (
               <tr key={i.id} className="hover:bg-slate-50">
                 <td className="px-4 py-3">
                   <Link to={`/issue/${i.id}`} className="font-medium text-slate-800 hover:text-brand-700">{i.title}</Link>
                   <p className="text-xs text-slate-400">{i.category}{i.city ? ` · ${i.city}` : ''}</p>
                 </td>
-                <td className="px-4 py-3"><Badge className={statusTone(i.status)}>{i.status}</Badge></td>
-                <td className="px-4 py-3"><Badge className={priorityTone(i.priority)}>{i.priority}</Badge></td>
+                <td className="px-4 py-3"><Badge className={statusTone(i.status)}>{formatLabel(i.status)}</Badge></td>
+                <td className="px-4 py-3"><Badge className={priorityTone(i.priority)}>{formatLabel(i.priority)}</Badge></td>
                 <td className="px-4 py-3 text-slate-600">{i.department || '—'}</td>
                 <td className="px-4 py-3 text-xs text-slate-500">{i.reporter || '—'}</td>
                 <td className="px-4 py-3 text-right text-slate-600">{i.vote_count ?? 0}</td>
@@ -282,26 +369,26 @@ function IssuesTab({ toast }) {
                 </td>
               </tr>
             ))}
-            {!rows.issues?.length && (
+            {!issues.length && (
               <tr><td colSpan={7} className="p-4"><EmptyState compact illustration="admin-map-empty" title="No reported issues match these filters." body="Try changing or clearing the current filters." /></td></tr>
             )}
           </tbody>
         </table>
       </div>
-      <Pagination page={rows.page} pages={rows.pages} onChange={setPage} />
+      <Pagination page={Number(rows.page) || 1} pages={Number(rows.pages) || 0} onChange={setPage} />
 
       <Modal open={!!action} onClose={() => setAction(null)}
         title={action?.mode === 'reassign' ? `Reassign issue #${action?.issue?.id}` : `Change status — #${action?.issue?.id}`}>
         {action?.mode === 'reassign' ? (
-          <Select label="Officer" value={action.officerId} onChange={(e) => setAction((a) => ({ ...a, officerId: e.target.value }))}
-            options={officers.map((o) => ({ value: o.id, label: `${o.full_name} (${o.department || 'no dept'})` }))} />
+          <Select label="Officer" value={action?.officerId || ''} onChange={(e) => setAction((a) => ({ ...a, officerId: e.target.value }))}
+            options={availableOfficers.map((o) => ({ value: o.id, label: `${o.full_name} (${o.department || 'no dept'})` }))} />
         ) : (
           <div className="space-y-3">
-            <Select label="New status" value={action.status} onChange={(e) => setAction((a) => ({ ...a, status: e.target.value }))}
-              options={['SUBMITTED', 'UNDER_REVIEW', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'REOPENED']} />
+            <Select label="New status" value={action?.status || ''} onChange={(e) => setAction((a) => ({ ...a, status: e.target.value }))}
+              options={['SUBMITTED', 'UNDER_REVIEW', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'REOPENED'].map((s) => ({ value: s, label: STATUS_META[s]?.label || formatLabel(s) }))} />
             <label className="block">
               <span className="label">Note (optional)</span>
-              <input className="input" placeholder="Reason for this change…" value={action.note}
+              <input className="input" placeholder="Reason for this change…" value={action?.note || ''}
                 onChange={(e) => setAction((a) => ({ ...a, note: e.target.value }))} />
             </label>
           </div>
@@ -346,7 +433,7 @@ function UsersTab({ toast }) {
               <p className="text-xs text-slate-500">{u.email}{u.city ? ` · ${u.city}` : ''}</p>
             </div>
             <div className="flex items-center gap-2">
-              {(u.roles || []).map((r) => <Badge key={r}>{r}</Badge>)}
+              {(u.roles || []).map((r) => <Badge key={r}>{formatLabel(r)}</Badge>)}
               <span className="text-xs text-slate-400">+{u.points ?? 0} pts</span>
               <Button size="sm" variant={u.is_banned ? 'secondary' : 'danger'} onClick={() => toggleBan(u)}>
                 {u.is_banned ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Ban className="h-3.5 w-3.5" />} {u.is_banned ? 'Unban' : 'Ban'}
@@ -416,7 +503,7 @@ function AuditTab({ toast }) {
           <EmptyState compact illustration="audit" title="No audit entries yet" body="Administrative actions will appear here." />
         ) : rows.logs.map((a) => (
           <div key={a.id} className="px-4 py-3 text-sm">
-            <p className="text-slate-700"><span className="font-medium">{a.actor_name || 'system'}</span> {a.action}{a.resource_type ? <span className="text-slate-500"> → {a.resource_type}{a.resource_id ? ` #${a.resource_id}` : ''}</span> : null}</p>
+            <p className="text-slate-700"><span className="font-medium">{a.actor_name || 'system'}</span> {formatLabel(a.action)}{a.resource_type ? <span className="text-slate-500"> → {formatLabel(a.resource_type)}{a.resource_id ? ` #${a.resource_id}` : ''}</span> : null}</p>
             <p className="mt-0.5 text-xs text-slate-400">{a.ip ?? ''} · {a.user_agent ?? ''} · {new Date(a.created_at).toLocaleString()}</p>
           </div>
         ))}
@@ -482,7 +569,7 @@ function SlaTab({ toast }) {
             {rules.map((r) => (
               <div key={r.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <div>
-                  <p className="text-sm font-medium text-slate-800">{r.priority} — <span className="font-mono">{r.hours}h</span></p>
+                  <p className="text-sm font-medium text-slate-800">{formatLabel(r.priority)} — <span className="font-mono">{r.hours}h</span></p>
                   <p className="text-xs text-slate-500">{r.description}</p>
                 </div>
                 <Button size="sm" variant="secondary" onClick={() => setEditing(r)}><Pencil className="h-3.5 w-3.5" /> Edit</Button>
@@ -492,7 +579,7 @@ function SlaTab({ toast }) {
         </div>
       </div>
 
-      <Modal open={!!editing} onClose={() => setEditing(null)} title={`Edit ${editing?.priority || ''} SLA rule`}>
+      <Modal open={!!editing} onClose={() => setEditing(null)} title={`Edit ${formatLabel(editing?.priority)} SLA rule`}>
         {editing && (
           <div className="space-y-3">
             <label className="block">
@@ -598,8 +685,15 @@ function ReferentialTab({ toast }) {
     <div className="mt-6 grid gap-6 lg:grid-cols-3">
       <section className="card p-5">
         <h2 className="mb-3 font-semibold text-slate-800">Departments</h2>
-        <ul className="mb-4 space-y-1 text-sm">
-          {depts.map((d) => <li key={d.id} className="flex justify-between text-slate-700"><span>{d.name}</span><span className="text-xs text-slate-400">{d.description}</span></li>)}
+        <ul className="mb-4 grid gap-1.5">
+          {depts.map((d) => (
+            <li key={d.id} className="rounded-lg border border-slate-100 bg-slate-50/70 px-3 py-2 text-left">
+              <h3 className="break-words text-sm font-semibold leading-5 text-slate-800">{d.name}</h3>
+              <p className="mt-0.5 break-words text-xs leading-4 text-slate-500">
+                {d.description || 'No description provided.'}
+              </p>
+            </li>
+          ))}
         </ul>
         <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); createDept(); }}>
           <input className="input" placeholder="New department…" value={newDept} onChange={(e) => setNewDept(e.target.value)} />

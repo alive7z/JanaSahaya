@@ -1,15 +1,15 @@
 import { STATUS_META, PRIORITY_META } from '../../constants';
-import { clsx } from '../../utils/formatters';
+import { clsx, formatLabel } from '../../utils/formatters';
 
 export function StatusBadge({ status }) {
   const meta = STATUS_META[status];
-  if (!meta) return <span className="badge bg-slate-100 text-slate-600">{status}</span>;
+  if (!meta) return <span className="badge bg-slate-100 text-slate-600">{formatLabel(status)}</span>;
   return <span className={`badge ${meta.classes}`}>{meta.label}</span>;
 }
 
 export function PriorityBadge({ priority }) {
   const meta = PRIORITY_META[priority];
-  if (!meta) return <span className="badge bg-slate-100 text-slate-600">{priority}</span>;
+  if (!meta) return <span className="badge bg-slate-100 text-slate-600">{formatLabel(priority)}</span>;
   return <span className={`badge ${meta.classes}`}>{meta.label}</span>;
 }
 

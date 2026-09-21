@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Bell, LogOut, MapPin, Menu, Plus, User, X } from 'lucide-react';
+import { Bell, HeartHandshake, LogOut, MapPin, Menu, Plus, User, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { clsx } from '../utils/formatters';
 
@@ -30,6 +30,11 @@ function NavItems({ onClick = () => {} }) {
           {l.label}
         </NavLink>
       ))}
+      {isAuthenticated && (
+        <NavLink to="/dashboard" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">
+          Dashboard
+        </NavLink>
+      )}
       {isAuthenticated && hasRole('OFFICER') && (
         <NavLink to="/officer" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">
           Officer Desk
@@ -45,7 +50,7 @@ function NavItems({ onClick = () => {} }) {
 }
 
 function AuthArea({ onClick = () => {} }) {
-  const { isAuthenticated, user, roles, logout } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
 
   if (!isAuthenticated) {
@@ -61,18 +66,15 @@ function AuthArea({ onClick = () => {} }) {
     );
   }
 
-  const isOfficer = roles.some((r) => r.name === 'OFFICER');
-  const isAdmin = roles.some((r) => r.name === 'ADMIN');
-
   return (
     <div className="flex items-center gap-2">
       <Link to="/notifications" aria-label="Notifications" className="btn-secondary p-2">
         <Bell className="h-4 w-4" />
       </Link>
       <Link
-        to={isAdmin ? '/admin' : isOfficer ? '/officer' : '/dashboard'}
+        to="/profile"
         className="btn-secondary p-2"
-        aria-label="Dashboard"
+        aria-label="Profile"
       >
         <User className="h-4 w-4" />
         <span className="hidden sm:inline">{user?.full_name?.split(' ')[0]}</span>
@@ -96,12 +98,14 @@ export default function RootLayout() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
-          <Link to="/" className="flex items-center gap-2 font-bold text-slate-900">
-            <MapPin className="h-6 w-6 text-brand-600" />
-            Civic<span className="text-brand-600">Issues</span>
+    <div className="flex min-h-screen flex-col overflow-x-hidden">
+      <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl">
+        <div className="page-shell flex h-[4.5rem] items-center justify-between">
+          <Link to="/" className="group flex items-center gap-2.5 font-extrabold tracking-tight text-slate-900">
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-lg shadow-brand-600/20 transition group-hover:-rotate-3">
+              <HeartHandshake className="h-5 w-5" />
+            </span>
+            <span className="text-lg">Jana<span className="text-brand-600">Setu</span></span>
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
@@ -147,13 +151,21 @@ export default function RootLayout() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-8 text-sm text-slate-500 sm:flex-row">
-          <p>
-            <span className="font-semibold text-slate-700">CivicIssues</span> — a crowdsourced civic
-            issue management platform.
-          </p>
-          <p>Report. Support. Track. Resolve.</p>
+      <footer className="border-t border-slate-200/80 bg-white">
+        <div className="page-shell flex flex-col justify-between gap-6 py-9 sm:flex-row sm:items-center">
+          <div>
+            <Link to="/" className="inline-flex items-center gap-2 font-bold text-slate-900">
+              <MapPin className="h-5 w-5 text-brand-600" /> JanaSetu
+            </Link>
+            <p className="mt-2 max-w-md text-sm text-slate-500">
+              A citizen-first bridge between communities and civic administration.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-slate-500">
+            <Link to="/issues" className="hover:text-brand-600">Explore issues</Link>
+            <Link to="/map" className="hover:text-brand-600">City map</Link>
+            <Link to="/report" className="hover:text-brand-600">Report an issue</Link>
+          </div>
         </div>
       </footer>
     </div>

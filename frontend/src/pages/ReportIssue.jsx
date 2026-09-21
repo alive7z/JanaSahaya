@@ -11,6 +11,7 @@ import { fetchMeta } from '../services/meta';
 import { createIssue, checkDuplicates } from '../services/issues';
 import { getUserLocation, reverseGeocode } from '../utils/geo';
 import { DEFAULT_COORDS } from '../constants';
+import Illustration from '../components/common/Illustration';
 
 export default function ReportIssue() {
   const { user } = useAuth();
@@ -97,7 +98,13 @@ export default function ReportIssue() {
       };
       const result = await createIssue(payload);
       toast.success('Issue submitted!');
-      navigate(`/issue/${result.issueId}`);
+      navigate('/report-success', {
+        state: {
+          issueId: result.issueId,
+          location: payload.address || payload.city || `${payload.latitude.toFixed(4)}, ${payload.longitude.toFixed(4)}`,
+          category: selectedCategory?.name || 'Civic issue',
+        },
+      });
     } catch (err) {
       toast.error(err, 'Could not submit the issue');
     }
@@ -109,15 +116,19 @@ export default function ReportIssue() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Report a civic issue</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Be precise about the location and add photos — it helps authorities and keeps duplicates down.
-        </p>
+    <div className="page-shell py-10">
+      <header className="mb-8 grid items-center gap-6 overflow-hidden rounded-3xl border border-brand-100 bg-gradient-to-r from-brand-50 to-white px-6 py-7 sm:px-8 lg:grid-cols-[1fr_300px]">
+        <div>
+          <span className="section-kicker">Help your community</span>
+          <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950">Report a Civic Issue</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+            Tell us what happened and where. We&apos;ll help make sure it reaches the right authority.
+          </p>
+        </div>
+        <Illustration name="report-issue" alt="Citizen photographing a damaged road" eager className="mx-auto hidden w-64 lg:block" />
       </header>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6 lg:grid-cols-2">
+      <form onSubmit={handleSubmit(onSubmit)} className="card grid gap-8 p-5 sm:p-7 lg:grid-cols-2">
         <div className="space-y-5">
           <div>
             <label className="label" htmlFor="title">Title</label>

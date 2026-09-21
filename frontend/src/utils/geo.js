@@ -63,3 +63,29 @@ export async function reverseGeocode(lat, lng) {
     return { address: '', city: '' };
   }
 }
+
+/** Forward-geocode a free-text address into coordinates (and its display label). */
+export async function geocodeAddress(query) {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`,
+    );
+    const data = await res.json();
+    const hit = Array.isArray(data) ? data[0] : null;
+    if (!hit) return { ok: false, error: 'not-found' };
+    return {
+      ok: true,
+      latitude: Number(hit.lat),
+      longitude: Number(hit.lon),
+      address: hit.display_name || '',
+      city:
+        hit.address?.city ||
+        hit.address?.town ||
+        hit.address?.village ||
+        hit.address?.municipality ||
+        '',
+    };
+  } catch {
+    return { ok: false, error: 'network' };
+  }
+}

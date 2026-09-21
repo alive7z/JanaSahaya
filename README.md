@@ -44,21 +44,21 @@ This is more than a CRUD ticketing app. It models the difficult parts of a real 
   <tr>
     <td width="50%" align="center">
       <img src="docs/screenshots/citizen-dashboard.png" alt="Citizen dashboard with issue activity and statistics" />
-      <br /><strong>Citizen dashboard</strong>
+      <br /><strong>Citizen Dashboard</strong>
     </td>
     <td width="50%" align="center">
       <img src="docs/screenshots/report-issue.png" alt="Geotagged issue reporting form" />
-      <br /><strong>Geotagged reporting</strong>
+      <br /><strong>Geotagged Reporting</strong>
     </td>
   </tr>
   <tr>
     <td width="50%" align="center">
       <img src="docs/screenshots/issue-map.png" alt="Interactive map of civic issues" />
-      <br /><strong>Interactive issue map</strong>
+      <br /><strong>Interactive Issue Map</strong>
     </td>
     <td width="50%" align="center">
       <img src="docs/screenshots/admin-dashboard.png" alt="Administrative operations and analytics dashboard" />
-      <br /><strong>Operations dashboard</strong>
+      <br /><strong>Operations Dashboard</strong>
     </td>
   </tr>
 </table>

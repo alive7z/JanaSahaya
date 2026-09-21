@@ -1,11 +1,14 @@
 import axios from 'axios';
 import { API_URL } from '../constants';
+import { initSocket } from './socket';
 
 const api = axios.create({
   baseURL: API_URL,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
+
+let refreshPromise = null;
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('accessToken');
@@ -20,12 +23,22 @@ api.interceptors.response.use(
     const status = error.response?.status;
 
     // Attempt one refresh when access token expires.
-    if (status === 401 && !original._retry && !original.url?.includes('/auth/')) {
+    const isSessionMutation = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout']
+      .some((path) => original.url?.includes(path));
+    if (status === 401 && original && !original._retry && !isSessionMutation) {
       original._retry = true;
       try {
-        const { data } = await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
-        localStorage.setItem('accessToken', data.data.accessToken);
-        original.headers.Authorization = `Bearer ${data.data.accessToken}`;
+        if (!refreshPromise) {
+          refreshPromise = axios
+            .post(`${API_URL}/auth/refresh`, {}, { withCredentials: true })
+            .then(({ data }) => data.data.accessToken)
+            .finally(() => { refreshPromise = null; });
+        }
+        const accessToken = await refreshPromise;
+        localStorage.setItem('accessToken', accessToken);
+        initSocket(accessToken);
+        original.headers = original.headers || {};
+        original.headers.Authorization = `Bearer ${accessToken}`;
         return api(original);
       } catch (refreshError) {
         localStorage.removeItem('accessToken');

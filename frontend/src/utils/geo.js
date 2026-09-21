@@ -51,7 +51,7 @@ export async function reverseGeocode(lat, lng) {
     );
     const data = await res.json();
     return {
-      address: data.display_name || '',
+      address: (data.display_name || `${lat.toFixed(6)}, ${lng.toFixed(6)}`).slice(0, 255),
       city:
         data.address?.city ||
         data.address?.town ||
@@ -68,7 +68,7 @@ export async function reverseGeocode(lat, lng) {
 export async function geocodeAddress(query) {
   try {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`,
+      `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&q=${encodeURIComponent(query)}`,
     );
     const data = await res.json();
     const hit = Array.isArray(data) ? data[0] : null;
@@ -77,7 +77,7 @@ export async function geocodeAddress(query) {
       ok: true,
       latitude: Number(hit.lat),
       longitude: Number(hit.lon),
-      address: hit.display_name || '',
+      address: (hit.display_name || `${Number(hit.lat).toFixed(6)}, ${Number(hit.lon).toFixed(6)}`).slice(0, 255),
       city:
         hit.address?.city ||
         hit.address?.town ||

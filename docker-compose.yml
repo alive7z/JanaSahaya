@@ -1,27 +1,25 @@
 services:
   mysql:
     image: mysql:8.4
-    container_name: civic-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-@Live404}
-      MYSQL_DATABASE: ${MYSQL_DB_NAME:-civic_issues}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: ${DB_NAME:-civic_issues}
+      MYSQL_USER: ${DB_USER:-janasetu}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD:-@Live404}"]
+      test: ["CMD-SHELL", "MYSQL_PWD=$${MYSQL_ROOT_PASSWORD} mysqladmin ping -h 127.0.0.1 -uroot --silent"]
       interval: 5s
       timeout: 5s
       retries: 20
-    # Host MySQL already uses 3306; expose the stacked DB on 3307.
-    ports:
-      - "3307:3306"
     networks:
       - civic
 
   backend:
     build: ./backend
-    container_name: civic-backend
     restart: unless-stopped
     depends_on:
       mysql:
@@ -31,12 +29,27 @@ services:
       PORT: "4000"
       DB_HOST: mysql
       DB_PORT: "3306"
-      DB_USER: root
-      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-@Live404}
-      DB_NAME: ${MYSQL_DB_NAME:-civic_issues}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev_access_secret}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev_refresh_secret}
-      CLIENT_ORIGIN: ${CLIENT_ORIGIN:-http://localhost:8080}
+      DB_USER: ${DB_USER:-janasetu}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      DB_NAME: ${DB_NAME:-civic_issues}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in .env}
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:?Set CLIENT_ORIGIN to the public HTTPS origin}
+      COOKIE_NAME: ${COOKIE_NAME:-civic_refresh}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      COOKIE_SAME_SITE: ${COOKIE_SAME_SITE:-lax}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      COOKIE_MAX_AGE_DAYS: ${COOKIE_MAX_AGE_DAYS:-7}
+      UPLOAD_DIR: /app/uploads
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-8}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Set ADMIN_EMAIL in .env}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      OFFICER_EMAIL: ${OFFICER_EMAIL:-officer@civic.gov}
+      OFFICER_PASSWORD: ${OFFICER_PASSWORD:?Set OFFICER_PASSWORD in .env}
+      ENABLE_DEMO_ACCOUNTS: ${ENABLE_DEMO_ACCOUNTS:-true}
+      DEMO_CITIZEN_EMAIL: ${DEMO_CITIZEN_EMAIL:?Set DEMO_CITIZEN_EMAIL in .env}
+      DEMO_ADMIN_EMAIL: ${DEMO_ADMIN_EMAIL:?Set DEMO_ADMIN_EMAIL in .env}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:?Set DEMO_PASSWORD in .env}
       # Stricter production-ish limits (overridable per environment).
       RATE_LIMIT_AUTH_MAX: ${RATE_LIMIT_AUTH_MAX:-20}
       RATE_LIMIT_REGISTER_MAX: ${RATE_LIMIT_REGISTER_MAX:-5}
@@ -48,20 +61,23 @@ services:
       interval: 10s
       timeout: 5s
       retries: 12
-    ports:
-      - "4000:4000"
     networks:
       - civic
 
   frontend:
-    build: ./frontend
-    container_name: civic-frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_ENABLE_DEMO_ACCOUNTS: ${ENABLE_DEMO_ACCOUNTS:-true}
+        VITE_DEMO_CITIZEN_EMAIL: ${DEMO_CITIZEN_EMAIL:?Set DEMO_CITIZEN_EMAIL in .env}
+        VITE_DEMO_ADMIN_EMAIL: ${DEMO_ADMIN_EMAIL:?Set DEMO_ADMIN_EMAIL in .env}
+        VITE_DEMO_PASSWORD: ${DEMO_PASSWORD:?Set DEMO_PASSWORD in .env}
     restart: unless-stopped
     depends_on:
       backend:
         condition: service_healthy
     ports:
-      - "${FRONTEND_PORT:-8080}:80"
+      - "127.0.0.1:${FRONTEND_PORT:-8080}:80"
     networks:
       - civic
 

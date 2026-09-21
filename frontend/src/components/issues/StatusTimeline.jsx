@@ -1,5 +1,6 @@
 import { CheckCircle2, MapPin, MessageSquare, Award } from 'lucide-react';
-import { formatDate } from '../../utils/formatters';
+import { formatDate, formatLabel } from '../../utils/formatters';
+import { STATUS_META } from '../../constants';
 
 const TYPE_ICON = {
   assignment: MapPin,
@@ -40,18 +41,8 @@ export default function StatusTimeline({ timeline }) {
 }
 
 function toLabel(status) {
-  const map = {
-    SUBMITTED: 'Submitted',
-    UNDER_REVIEW: 'Under review',
-    ASSIGNED: 'Assigned',
-    IN_PROGRESS: 'In progress',
-    RESOLVED: 'Resolved',
-    CLOSED: 'Closed',
-    REJECTED: 'Rejected',
-    DUPLICATE: 'Duplicate',
-    REOPENED: 'Reopened',
-  };
-  return map[status] || status || 'Unknown';
+  if (!status) return 'Unknown';
+  return STATUS_META[status]?.label || formatLabel(status);
 }
 
 function fromLabel(status) {

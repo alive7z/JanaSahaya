@@ -3,6 +3,13 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+      },
+      boxShadow: {
+        soft: '0 18px 55px -26px rgba(23, 71, 182, 0.28)',
+        card: '0 12px 34px -22px rgba(15, 23, 42, 0.28)',
+      },
       colors: {
         brand: {
           50: '#eef7ff',

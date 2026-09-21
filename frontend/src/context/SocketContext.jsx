@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { getSocket, joinIssueRoom, leaveIssueRoom } from '../services/socket';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { getSocket, joinIssueRoom, leaveIssueRoom, joinMapRoom, leaveMapRoom } from '../services/socket';
 import { useAuth } from './AuthContext';
 
 const SocketContext = createContext(null);
@@ -9,43 +9,37 @@ export function SocketProvider({ children }) {
   const listeners = useRef([]);
   const [ready, setReady] = useState(false);
 
-  // Sync listeners with the active socket as it connects.
   useEffect(() => {
-    const sync = () => {
-      const s = getSocket();
-      if (!s) return;
-      s.onAny((event) => {
-        listeners.current.forEach(({ event: e, cb }) => {
-          if (e === event) cb(s);
-        });
-      });
-      setReady(s.connected);
-      s.on('connect', () => setReady(true));
+    const active = getSocket();
+    if (!isAuthenticated || !active) { setReady(false); return undefined; }
+    const onConnect = () => setReady(true);
+    const onDisconnect = () => setReady(false);
+    const onAny = (event, ...payload) => listeners.current.forEach(({ event: expected, cb }) => {
+      if (expected === event) cb(...payload);
+    });
+    active.on('connect', onConnect);
+    active.on('disconnect', onDisconnect);
+    active.onAny(onAny);
+    setReady(active.connected);
+    if (!active.connected) active.connect();
+    return () => {
+      active.off('connect', onConnect);
+      active.off('disconnect', onDisconnect);
+      active.offAny(onAny);
     };
-    sync();
+  }, [isAuthenticated]);
+
+  const subscribe = useCallback((event, cb) => {
+    const entry = { event, cb };
+    listeners.current.push(entry);
+    return () => { listeners.current = listeners.current.filter((listener) => listener !== entry); };
   }, []);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      const s = getSocket();
-      if (s && !s.connected) s.connect();
-    }
-  }, [isAuthenticated]);
+  const value = useMemo(() => ({ ready, subscribe, joinIssueRoom, leaveIssueRoom, joinMapRoom, leaveMapRoom }), [ready, subscribe]);
 
   return (
     <SocketContext.Provider
-      value={{
-        ready,
-        subscribe(event, cb) {
-          const entry = { event, cb };
-          listeners.current.push(entry);
-          return () => {
-            listeners.current = listeners.current.filter((l) => l !== entry);
-          };
-        },
-        joinIssueRoom,
-        leaveIssueRoom,
-      }}
+      value={value}
     >
       {children}
     </SocketContext.Provider>

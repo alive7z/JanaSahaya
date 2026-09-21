@@ -1,87 +1,151 @@
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import MarkerClusterGroup from 'react-leaflet-cluster';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { Link } from 'react-router-dom';
-import { StatusBadge, PriorityBadge } from '../common/Badge';
-import { distanceLabel, timeAgo } from '../../utils/formatters';
-import { PRIORITY_META } from '../../constants';
+import { useEffect, useMemo } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { Link } from "react-router-dom";
+import { StatusBadge, PriorityBadge } from "../common/Badge";
+import { distanceLabel, timeAgo } from "../../utils/formatters";
 
 const iconCache = {};
 
-function styledIcon(priority, voting = false) {
+function styledIcon(priority) {
   const colors = {
-    LOW: '#15803d',
-    MEDIUM: '#b45309',
-    HIGH: '#c2410c',
-    CRITICAL: '#be123c',
+    LOW: "#22c55e",
+    MEDIUM: "#eab308",
+    HIGH: "#f97316",
+    CRITICAL: "#ef4444",
   };
   const color = colors[priority] || colors.MEDIUM;
-  const size = voting ? 22 : 26;
-  const key = `${priority}-${voting}`;
-  if (iconCache[key]) return iconCache[key];
-
-  const html = `
-    <div style="
-      width:${size}px;height:${size}px;border-radius:50%;
-      background:${color};border:2px solid white;
-      box-shadow:0 1px 4px rgba(0,0,0,.4);
-      display:flex;align-items:center;justify-content:center;
-    "></div>`;
-
-  const icon = L.divIcon({
-    html,
-    className: '',
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -size / 2],
+  if (iconCache[priority]) return iconCache[priority];
+  iconCache[priority] = L.divIcon({
+    html: `<div style="width:26px;height:26px;border-radius:50%;background:${color};border:3px solid white;box-shadow:0 2px 7px rgba(15,23,42,.35)"></div>`,
+    className: "",
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+    popupAnchor: [0, -13],
   });
-  iconCache[key] = icon;
-  return icon;
+  return iconCache[priority];
 }
 
-export default function IssueMap({ issues, lat, lng, zoom = 12, onSelect }) {
-  if (issues == null) return null;
+const userIcon = L.divIcon({
+  html: '<div style="width:18px;height:18px;border-radius:50%;background:#1b6ef5;border:4px solid white;box-shadow:0 0 0 3px rgba(27,110,245,.25),0 2px 8px rgba(15,23,42,.35)"></div>',
+  className: "",
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+});
+
+function Viewport({ points, fallback }) {
+  const map = useMap();
+  const signature = points.map((point) => point.join(",")).join("|");
+  useEffect(() => {
+    if (points.length > 1)
+      map.fitBounds(L.latLngBounds(points), { padding: [42, 42], maxZoom: 15 });
+    else if (points.length === 1) map.setView(points[0], 15);
+    else map.setView(fallback, 12);
+  }, [map, signature]); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+}
+
+export default function IssueMap({
+  issues,
+  lat,
+  lng,
+  zoom = 12,
+  currentPosition = null,
+  onSelect,
+}) {
+  const validIssues = useMemo(
+    () =>
+      (issues || []).filter(
+        (issue) =>
+          Number.isFinite(Number(issue.latitude)) &&
+          Number.isFinite(Number(issue.longitude)),
+      ),
+    [issues],
+  );
+  const points = useMemo(
+    () =>
+      validIssues.map((issue) => [
+        Number(issue.latitude),
+        Number(issue.longitude),
+      ]),
+    [validIssues],
+  );
+  const viewportPoints = useMemo(
+    () =>
+      currentPosition
+        ? [...points, [currentPosition.latitude, currentPosition.longitude]]
+        : points,
+    [points, currentPosition],
+  );
+  const fallback = [Number(lat), Number(lng)];
+
   return (
     <MapContainer
-      center={[lat, lng]}
+      center={fallback}
       zoom={zoom}
-      scrollWheelZoom={false}
+      scrollWheelZoom
       className="h-full w-full rounded-xl"
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      <Viewport points={viewportPoints} fallback={fallback} />
+      {currentPosition && (
+        <Marker
+          position={[currentPosition.latitude, currentPosition.longitude]}
+          icon={userIcon}
+          zIndexOffset={1000}
+        >
+          <Popup>
+            <span className="text-sm font-medium">You are here</span>
+          </Popup>
+        </Marker>
+      )}
       <MarkerClusterGroup chunkedLoading>
-        {issues.map((i) => (
+        {validIssues.map((issue) => (
           <Marker
-            key={i.id}
-            position={[Number(i.latitude), Number(i.longitude)]}
-            icon={styledIcon(i.priority)}
-            eventHandlers={{ click: () => onSelect?.(i.id) }}
+            key={issue.id}
+            position={[Number(issue.latitude), Number(issue.longitude)]}
+            icon={styledIcon(issue.priority)}
+            eventHandlers={{ click: () => onSelect?.(issue.id) }}
           >
-            <Popup maxWidth={300}>
-              <div className="w-60">
+            <Popup maxWidth={320}>
+              <div className="w-64 space-y-2">
                 <Link
-                  to={`/issue/${i.id}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="font-semibold text-slate-900 hover:text-brand-700"
+                  to={`/issue/${issue.id}`}
+                  onClick={(event) => event.stopPropagation()}
+                  className="block font-semibold text-slate-900 hover:text-brand-700"
                 >
-                  {i.title}
+                  {issue.title}
                 </Link>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  <StatusBadge status={i.status} />
-                  <PriorityBadge priority={i.priority} />
-                </div>
-                <p className="mt-1 text-xs text-slate-500">
-                  {i.vote_count} support · {timeAgo(i.created_at)}
+                <p className="text-xs font-medium text-brand-700">
+                  {issue.category_name || "Civic issue"}
                 </p>
-                {i.distance_metres != null && (
-                  <p className="text-xs font-medium text-brand-600">{distanceLabel(i.distance_metres)} from you</p>
+                <div className="flex flex-wrap gap-1">
+                  <StatusBadge status={issue.status} />
+                  <PriorityBadge priority={issue.priority} />
+                </div>
+                {issue.address && (
+                  <p className="line-clamp-2 text-xs text-slate-600">
+                    {issue.address}
+                  </p>
                 )}
-                <Link to={`/issue/${i.id}`} className="mt-2 inline-block text-xs font-medium text-brand-600">
-                  Open issue →
+                <p className="text-xs text-slate-500">
+                  {issue.vote_count ?? 0} support · {timeAgo(issue.created_at)}
+                </p>
+                {issue.distance_metres != null && (
+                  <p className="text-xs font-medium text-brand-600">
+                    {distanceLabel(issue.distance_metres)} from you
+                  </p>
+                )}
+                <Link
+                  to={`/issue/${issue.id}`}
+                  className="inline-block text-xs font-semibold text-brand-600"
+                >
+                  View Details →
                 </Link>
               </div>
             </Popup>

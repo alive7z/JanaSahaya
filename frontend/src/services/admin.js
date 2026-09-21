@@ -66,12 +66,29 @@ export async function adminIssues({ page = 1, limit = 10, search = '', status = 
   if (departmentId) params.departmentId = departmentId;
   if (priority) params.priority = priority;
   const { data } = await api.get('/admin/issues', { params });
+  const payload = data?.data;
+  if (Array.isArray(payload)) {
+    return { issues: payload, total: payload.length, page: 1, pages: 1, summary: null };
+  }
+  return {
+    issues: Array.isArray(payload?.issues) ? payload.issues : [],
+    total: Number(payload?.total) || 0,
+    page: Number(payload?.page) || page,
+    pages: Number(payload?.pages) || 0,
+    summary: payload?.summary && typeof payload.summary === 'object' ? payload.summary : null,
+  };
+}
+
+export async function adminMapIssues(params = {}) {
+  const { data } = await api.get('/admin/map', { params });
   return data.data;
 }
 
 export async function adminOfficers() {
   const { data } = await api.get('/admin/officers');
-  return data.data.officers;
+  const payload = data?.data;
+  if (Array.isArray(payload)) return payload;
+  return Array.isArray(payload?.officers) ? payload.officers : [];
 }
 
 export async function adminIssuesReassign(issueId, officerId) {

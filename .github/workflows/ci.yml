@@ -83,3 +83,29 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+  containers:
+    runs-on: ubuntu-latest
+    env:
+      MYSQL_ROOT_PASSWORD: ci-root-password-not-for-production
+      DB_NAME: civic_issues
+      DB_USER: janasetu
+      DB_PASSWORD: ci-app-password-not-for-production
+      JWT_ACCESS_SECRET: ci-access-secret-00000000000000000000000000000001
+      JWT_REFRESH_SECRET: ci-refresh-secret-0000000000000000000000000000002
+      CLIENT_ORIGIN: https://janasahaya.example.com
+      ADMIN_EMAIL: owner@example.com
+      ADMIN_PASSWORD: CiOwnerPassword123
+      OFFICER_PASSWORD: CiOfficerPassword123
+      ENABLE_DEMO_ACCOUNTS: "true"
+      DEMO_CITIZEN_EMAIL: citizen@janasahaya.demo
+      DEMO_ADMIN_EMAIL: admin@janasahaya.demo
+      DEMO_PASSWORD: CiDemoPassword123
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Compose configuration
+        run: docker compose config --quiet
+
+      - name: Build production containers
+        run: docker compose build

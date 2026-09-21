@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: Civic Issues API
+  title: JanaSahaya API
   description: |
-    Crowd-sourced civic issue reporting and resolution platform.
+    JanaSahaya is a crowd-sourced civic issue reporting and resolution platform.
     - Citizens report issues, vote, comment, follow and verify resolutions.
     - Officers claim issues in their department, update statuses and resolve with evidence.
     - Admins manage users, officers, departments, categories, SLA rules and audit state changes.
@@ -11,10 +11,10 @@ info:
     cookie for rotation. Sensitive admin actions write to the audit log.
   version: 1.0.0
   contact:
-    name: Civic Issues
+    name: JanaSahaya
 servers:
-  - url: http://localhost:4000/api/v1
-    description: Local development
+  - url: /api/v1
+    description: Same-origin API (development proxy or production reverse proxy)
 security:
   - bearerAuth: []
 tags:

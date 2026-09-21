@@ -6,7 +6,7 @@ import { Pagination } from '../components/common/Pagination';
 import { useToast } from '../components/common/Toast';
 import { useSocket } from '../context/SocketContext';
 import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '../services/notifications';
-import { timeAgo } from '../utils/formatters';
+import { timeAgo, formatLabel } from '../utils/formatters';
 
 const NOTIFICATION_TYPES = {
   STATUS_CHANGE: 'Status change',
@@ -90,7 +90,7 @@ export default function Notifications() {
                   <div className="flex items-center gap-2">
                     <span className={`inline-flex h-2 w-2 shrink-0 rounded-full ${n.is_read ? 'bg-slate-200' : 'bg-brand-500'}`} />
                     <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                      {NOTIFICATION_TYPES[n.type] || n.type || 'Update'}
+                      {NOTIFICATION_TYPES[n.type] || formatLabel(n.type) || 'Update'}
                     </span>
                   </div>
                   <p className="mt-1 text-sm text-slate-700">{n.title || n.message}</p>

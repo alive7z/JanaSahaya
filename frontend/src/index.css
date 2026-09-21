@@ -99,3 +99,22 @@
   z-index: 0;
   font: inherit;
 }
+
+/* Keep issue-count clusters aligned with the JanaSahaya map palette. */
+.leaflet-container .marker-cluster-small,
+.leaflet-container .marker-cluster-medium,
+.leaflet-container .marker-cluster-large {
+  background: transparent;
+  box-shadow: none;
+}
+
+.leaflet-container .marker-cluster-small div,
+.leaflet-container .marker-cluster-medium div,
+.leaflet-container .marker-cluster-large div {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: #dc2626;
+  font-weight: 800;
+  text-shadow: none;
+}

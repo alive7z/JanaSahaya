@@ -1,0 +1,374 @@
+openapi: 3.0.3
+info:
+  title: Civic Issues API
+  description: |
+    Crowd-sourced civic issue reporting and resolution platform.
+    - Citizens report issues, vote, comment, follow and verify resolutions.
+    - Officers claim issues in their department, update statuses and resolve with evidence.
+    - Admins manage users, officers, departments, categories, SLA rules and audit state changes.
+
+    Authentication uses a short-lived **Bearer** access token plus an **HttpOnly** `civic_refresh`
+    cookie for rotation. Sensitive admin actions write to the audit log.
+  version: 1.0.0
+  contact:
+    name: Civic Issues
+servers:
+  - url: http://localhost:4000/api/v1
+    description: Local development
+security:
+  - bearerAuth: []
+tags:
+  - name: Auth
+  - name: Issues
+  - name: Comments
+  - name: Admin
+  - name: Analytics
+  - name: Meta
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a citizen account (rate limited)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName, email, password, confirmPassword, city]
+              properties:
+                fullName: { type: string, example: Anjali Sharma }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                confirmPassword: { type: string }
+                phone: { type: string }
+                city: { type: string }
+      responses:
+        '201': { description: Account created }
+        '422': { description: Validation failed }
+        '429': { description: Rate limited }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login and start a token family
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200': { description: Logged in, sets civic_refresh cookie }
+        '401': { description: Invalid credentials }
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Rotate the refresh token (reuse detection revokes the whole family)
+      responses:
+        '200': { description: New access token + rotated refresh cookie }
+        '401': { description: Reuse detected or revoked }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revoke the current token family
+      responses:
+        '200': { description: Logged out }
+  /issues:
+    get:
+      tags: [Issues]
+      summary: List public issues
+      parameters:
+        - { name: page, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: categoryId, in: query, schema: { type: integer } }
+        - { name: lat, in: query, schema: { type: number } }
+        - { name: lng, in: query, schema: { type: number } }
+      responses:
+        '200': { description: List of issues }
+    post:
+      tags: [Issues]
+      summary: Report a new issue (multipart, spikes rejected by magic-byte check)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                description: { type: string }
+                categoryId: { type: integer }
+                pincode: { type: string }
+                latitude: { type: number }
+                longitude: { type: number }
+                images:
+                  type: array
+                  items: { type: string, format: binary }
+      responses:
+        '201': { description: Issue submitted }
+        '400': { description: File rejected }
+  /issues/nearby:
+    get:
+      tags: [Issues]
+      summary: Nearby issues by coordinates
+      parameters:
+        - { name: lat, in: query, required: true, schema: { type: number } }
+        - { name: lng, in: query, required: true, schema: { type: number } }
+        - { name: radiusKm, in: query, schema: { type: number, default: 5 } }
+      responses:
+        '200': { description: Nearby issues }
+  /issues/check-duplicates:
+    post:
+      tags: [Issues]
+      summary: Fuzzily match a draft against existing issues
+      responses:
+        '200': { description: Duplicate candidates }
+  /issues/my:
+    get:
+      tags: [Issues]
+      summary: Issues reported by the authenticated user
+  /issues/{id}:
+    get:
+      tags: [Issues]
+      summary: Issue detail (status history, images, resolution, assignment)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: Issue detail }
+  /issues/{id}/vote:
+    post:
+      tags: [Issues]
+      summary: Vote for an issue (rate limited)
+    delete:
+      tags: [Issues]
+      summary: Remove vote
+  /issues/{id}/follow:
+    post:
+      tags: [Issues]
+      summary: Follow an issue
+    delete:
+      tags: [Issues]
+      summary: Unfollow
+  /issues/{id}/verify:
+    post:
+      tags: [Issues]
+      summary: Confirm / dispute a resolution. Reopens the issue after 2 disputes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [confirmed]
+              properties:
+                confirmed: { type: boolean }
+      responses:
+        '200': { description: Verification recorded, reopened flag when threshold met }
+  /issues/{id}/comments:
+    get:
+      tags: [Comments]
+      summary: List issue comments
+    post:
+      tags: [Comments]
+      summary: Add a comment (rate limited)
+  /issues/{id}/comments/{commentId}:
+    patch:
+      tags: [Comments]
+      summary: Edit a comment you wrote
+    delete:
+      tags: [Comments]
+      summary: Delete a comment you wrote
+  /issues/{id}/comments/{commentId}/report:
+    post:
+      tags: [Comments]
+      summary: Report a comment for moderation
+  /issues/{id}/accept:
+    patch:
+      tags: [Issues]
+      summary: 'Officer: atomically claim an issue (409 if already claimed)'
+      responses:
+        '200': { description: Issue claimed }
+        '409': { description: Claimed by another officer first }
+  /issues/{id}/status:
+    patch:
+      tags: [Issues]
+      summary: 'Officer/Admin: change issue status'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, example: IN_PROGRESS }
+                note: { type: string }
+  /issues/{id}/resolve:
+    post:
+      tags: [Issues]
+      summary: 'Officer: resolve with evidence image + note (transactional)'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [note, evidence]
+              properties:
+                note: { type: string }
+                evidence: { type: string, format: binary }
+      responses:
+        '200': { description: Marked resolved }
+  /issues/{id}/assign-officer:
+    patch:
+      tags: [Admin]
+      summary: 'Admin: assign an officer to an issue'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [officerId]
+              properties:
+                officerId: { type: integer }
+      responses:
+        '200': { description: Assigned }
+  /admin/issues:
+    get:
+      tags: [Admin]
+      summary: Admin issue list with filters and summary counts
+      parameters:
+        - { name: status, in: query, schema: { type: string } }
+        - { name: priority, in: query, schema: { type: string } }
+        - { name: departmentId, in: query, schema: { type: integer } }
+        - { name: categoryId, in: query, schema: { type: integer } }
+        - { name: search, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: page, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        '200': { description: Filtered issues + summary }
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: List users (searchable, paginated)
+  /admin/users/{id}:
+    get:
+      tags: [Admin]
+      summary: User detail with roles
+    patch:
+      tags: [Admin]
+      summary: Update user profile (name, email, phone, city, ward)
+  /admin/users/{id}/roles:
+    post:
+      tags: [Admin]
+      summary: Assign a role (last admin is protected)
+  /admin/users/{id}/ban:
+    patch:
+      tags: [Admin]
+      summary: Toggle ban (self-ban and last-admin banned protected)
+  /admin/officers:
+    get:
+      tags: [Admin]
+      summary: List officers with workload
+    post:
+      tags: [Admin]
+      summary: Create an officer
+  /admin/departments:
+    get:
+      tags: [Admin]
+      summary: List departments
+    post:
+      tags: [Admin]
+      summary: Create a department
+  /admin/departments/{id}:
+    get:
+      tags: [Admin]
+      summary: Department detail with its officers
+    patch:
+      tags: [Admin]
+      summary: Update a department
+  /admin/categories:
+    get:
+      tags: [Admin]
+      summary: List categories with routing
+    post:
+      tags: [Admin]
+      summary: Create a category
+  /admin/categories/{id}:
+    patch:
+      tags: [Admin]
+      summary: Edit category (name, severity, description)
+  /admin/categories/{id}/routing:
+    patch:
+      tags: [Admin]
+      summary: Change category routing department
+  /admin/sla:
+    get:
+      tags: [Admin]
+      summary: List SLA rules
+  /admin/sla/status:
+    get:
+      tags: [Admin]
+      summary: SLA violations and warnings
+  /admin/sla/{id}:
+    patch:
+      tags: [Admin]
+      summary: Update an SLA rule and recompute open deadlines
+  /admin/moderation/reports:
+    get:
+      tags: [Admin]
+      summary: Open comment reports
+  /admin/moderation/reports/{reportId}:
+    post:
+      tags: [Admin]
+      summary: Hide comment / dismiss or resolve a report
+  /admin/audit-logs:
+    get:
+      tags: [Admin]
+      summary: Audit trail of sensitive actions
+  /analytics/overview:
+    get:
+      tags: [Analytics]
+      summary: Issues per day + priority distribution
+  /analytics/funnel:
+    get:
+      tags: [Analytics]
+      summary: Issue counts per status
+  /analytics/departments:
+    get:
+      tags: [Analytics]
+      summary: Department totals, resolved and avg resolution hours
+  /analytics/categories:
+    get:
+      tags: [Analytics]
+      summary: Category totals
+  /analytics/locations:
+    get:
+      tags: [Analytics]
+      summary: Issues by city, ward and hotspots
+  /analytics/sla:
+    get:
+      tags: [Analytics]
+      summary: SLA health (overdue / on-track / by priority)
+  /analytics/officers:
+    get:
+      tags: [Analytics]
+      summary: 'Admin: officer performance'
+  /analytics/citizens:
+    get:
+      tags: [Analytics]
+      summary: 'Admin: top active citizens'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

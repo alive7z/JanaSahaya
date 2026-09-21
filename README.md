@@ -88,7 +88,7 @@ Service / Repository Layer
 MySQL
 ```
 
-In production the stack runs behind **Nginx**, orchestrated with **Docker Compose**, with uploads stored on a **persistent volume**.
+In production the stack runs behind **Nginx**, orchestrated with **Docker Compose**, with uploads stored on a **persistent volume**. The cloud deployment targets **Vercel** (frontend), **Render** (backend, Docker) and **Aiven MySQL** — see [Deployment](#deployment).
 
 ## Tech Stack
 
@@ -101,7 +101,7 @@ In production the stack runs behind **Nginx**, orchestrated with **Docker Compos
 | Realtime | Socket.IO |
 | Auth | JWT + rotating refresh tokens |
 | Charts | Recharts |
-| Deployment | Docker, Nginx |
+| Deployment | Vercel + Render + Aiven MySQL (cloud); Docker Compose + Nginx (self-host) |
 | Testing | Vitest (frontend) + `node --test` (backend) |
 
 ## Issue Lifecycle
@@ -199,14 +199,90 @@ Backend unit tests cover the Haversine distance, duplicate scoring, text similar
 
 ## Deployment
 
-The intended production setup is a single Linux host running Docker Compose behind a host Nginx TLS reverse proxy:
+### Cloud architecture (recommended)
 
-- **Frontend** — built container served by Nginx
-- **Backend** — Node.js + Express container
-- **Database** — MySQL 8 with a named volume
-- **Uploads** — persistent named volume shared with the backend
+```
+Vercel (React/Vite SPA)
+        │  HTTPS + credentials
+        ▼
+Render Web Service (Node.js + Express + Socket.IO, Docker)
+        │  TLS
+        ▼
+Aiven MySQL 8.4
+```
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for the full runbook.
+### A. Aiven MySQL
+
+Create a MySQL 8.4 service in Aiven. Aiven requires **TLS** and provides its own CA
+certificate. Collect the connection fields from the Aiven console:
+
+| Variable | Description |
+| --- | --- |
+| `DB_HOST` | Aiven service host |
+| `DB_PORT` | Aiven service port |
+| `DB_USER` | Aiven user (e.g. `avnadmin`) |
+| `DB_PASSWORD` | Aiven user password |
+| `DB_NAME` | `defaultdb` |
+| `DB_SSL_CA_PATH` | Path to the Aiven CA cert (`/etc/secrets/aiven-ca.pem` on Render) |
+
+SSL mode **REQUIRED**. The app loads the CA and verifies the server
+(`rejectUnauthorized: true`); TLS verification is never disabled and the database
+is never created or dropped by the application.
+
+### B. Render (backend, Docker)
+
+- **Service type:** Web Service
+- **Runtime:** Docker
+- **Root Directory:** `backend`
+- **Docker Build Context:** `.`
+- **Dockerfile:** `./Dockerfile`
+- **Health Check Path:** `/health`
+
+Environment variables: copy the keys from [`backend/.env.example`](backend/.env.example).
+`PORT` is injected by Render and the server binds `0.0.0.0`. On every boot the
+container runs `node src/db/setup.js` (schema → migrations → idempotent seed) and
+then starts the server.
+
+Secret file: add the Aiven CA certificate as a Render **Secret File** named
+`aiven-ca.pem` mounted at `/etc/secrets/aiven-ca.pem`, and set
+`DB_SSL_CA_PATH=/etc/secrets/aiven-ca.pem`.
+
+### C. Vercel (frontend)
+
+- **Root Directory:** `frontend`
+- **Framework Preset:** Vite
+- **Build Command:** `npm run build` · **Output Directory:** `dist`
+
+Environment variables (see [`frontend/.env.example`](frontend/.env.example)):
+
+| Variable | Points to |
+| --- | --- |
+| `VITE_API_URL` | `https://<render-service>.onrender.com/api/v1` |
+| `VITE_SOCKET_URL` | `https://<render-service>.onrender.com` |
+| `VITE_MEDIA_URL` | optional; defaults to `<VITE_SOCKET_URL>/uploads` |
+| `VITE_ENABLE_DEMO_ACCOUNTS` | `true` to show the demo login buttons |
+| `VITE_DEMO_CITIZEN_EMAIL` / `VITE_DEMO_ADMIN_EMAIL` / `VITE_DEMO_PASSWORD` | public demo credentials |
+
+`frontend/vercel.json` adds the SPA rewrite so deep links such as `/login`,
+`/map`, `/issues/123` and `/admin` do not 404.
+
+### D. Verify
+
+```sh
+curl -fsS https://<render-service>.onrender.com/health   # {"status":"ok"}
+curl -fsS https://<render-service>.onrender.com/ready    # {"status":"ready","database":"connected"}
+curl -fsS https://<render-service>.onrender.com/api/docs/openapi.json
+```
+
+Finally set `CLIENT_ORIGIN` on Render to the deployed Vercel origin
+(`https://<project>.vercel.app`) and redeploy so CORS and the refresh cookie match.
+
+### Self-hosting (Docker Compose + Nginx)
+
+The stack can also run on a single Linux host with Docker Compose behind a host
+Nginx TLS reverse proxy — **frontend** (Nginx container), **backend** (Node.js
+container), **MySQL 8** and **uploads** on named volumes. See
+[DEPLOYMENT.md](DEPLOYMENT.md) for the full VPS runbook.
 
 ## Project structure
 

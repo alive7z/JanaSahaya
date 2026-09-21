@@ -2,325 +2,270 @@
 
 # JanaSahaya
 
-**Smart Civic Issue Reporting & Resolution Platform**
+### A transparent, real-time civic issue reporting and resolution platform
 
-JanaSahaya is a full-stack civic issue reporting and resolution platform that connects citizens, municipal officers, and administrators through a transparent workflow from issue reporting to resolution and citizen verification.
+JanaSahaya connects citizens, municipal officers, and administrators in one accountable workflow—from a geotagged report to evidence-backed resolution and citizen verification.
 
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-22-339933?logo=node.js&logoColor=white)
-![Express](https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white)
-![Socket.IO](https://img.shields.io/badge/Socket.IO-4-010101?logo=socket.io&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-22-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white)](https://expressjs.com/)
+[![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![Socket.IO](https://img.shields.io/badge/Socket.IO-4-010101?logo=socket.io&logoColor=white)](https://socket.io/)
+[![OpenAPI](https://img.shields.io/badge/OpenAPI-3.0.3-6BA539?logo=openapiinitiative&logoColor=white)](backend/docs/openapi.yaml)
+[![Tests](https://img.shields.io/badge/tests-43%20passing-brightgreen)](#testing)
+
+**[Live application](https://jana-sahaya.vercel.app)** · **[API documentation](https://janasahaya-production.up.railway.app/api/docs)** · **[API status](https://janasahaya-production.up.railway.app/ready)**
 
 </div>
 
-> **Live demo:** not deployed yet — run it locally with Docker (see [Quick start](#quick-start)).
-> **API docs:** served by the backend at `/api/docs` (OpenAPI JSON at `/api/docs/openapi.json`).
-
-## Screenshots
-
 <p align="center">
-  <img src="docs/screenshots/citizen-dashboard.png" alt="JanaSahaya citizen dashboard" width="80%" />
+  <a href="https://jana-sahaya.vercel.app">
+    <img src="docs/screenshots/janasahaya-home.png" alt="JanaSahaya landing page" width="92%" />
+  </a>
 </p>
 
-The repository currently ships one real screenshot. The remaining views below are the recommended set to capture for a complete visual tour:
+## Why JanaSahaya stands out
 
-| Screenshot | Path | Status |
-| --- | --- | --- |
-| Landing page | `docs/screenshots/landing.png` | to capture |
-| Citizen dashboard | `docs/screenshots/citizen-dashboard.png` | included |
-| Report issue | `docs/screenshots/report-issue.png` | to capture |
-| Citizen map | `docs/screenshots/issue-map.png` | to capture |
-| Admin dashboard | `docs/screenshots/admin-dashboard.png` | to capture |
-| Audit logs | `docs/screenshots/audit-logs.png` | to capture |
+This is more than a CRUD ticketing app. It models the difficult parts of a real public-service workflow: concurrent ownership, explainable prioritization, duplicate reports, role boundaries, resolution evidence, citizen feedback, and auditability.
 
-## Features
-
-**Citizen**
-- Geotagged civic issue reporting (GPS, map pin, or manual address)
-- Photo uploads with duplicate warnings before submission
-- Voting, following, comments, and replies
-- Status tracking and resolution verification
-- Real-time notifications over Socket.IO
-
-**Officer**
-- Department-scoped issue queue
-- Atomic issue claiming (no two officers can claim the same issue)
-- Status workflow with resolution evidence
-- SLA tracking and breach visibility
-
-**Admin**
-- Issue triage, assignment, and status overrides
-- Officer, department, category, and SLA-rule management
-- Escalations, moderation, and abuse/trust signals
-- Audit log and analytics dashboards
-
-## Engineering Highlights
-
-- **Geospatial duplicate detection** using Haversine distance plus category and weighted text similarity into an explainable score.
-- **Explainable priority scoring** that returns the score, level, and human-readable reasons.
-- **SLA-based escalation** with breach and approaching-deadline tracking.
-- **Role-based access control** for citizens, officers (department-scoped), and admins (last-admin protection).
-- **Transaction-safe lifecycle transitions** — officer claims are atomic and status changes commit or roll back as a unit.
-- **Rotating refresh tokens** stored in httpOnly cookies, with token families and reuse detection.
-- **Secure image validation** — extension allow-list plus magic-byte verification, random filenames, and size caps.
-- **Real-time updates** over Socket.IO for status changes and notifications.
-- **Dockerized deployment** with a persistent uploads volume and a host Nginx TLS reverse proxy.
-- **Audit history** for sensitive administrative actions.
-
-## Architecture
-
-```
-React + Vite
-     │
-     ▼
-REST API + Socket.IO
-     │
-     ▼
-Node.js + Express
-     │
-     ▼
-Service / Repository Layer
-     │
-     ▼
-MySQL
-```
-
-In production the stack runs behind **Nginx**, orchestrated with **Docker Compose**, with uploads stored on a **persistent volume**. The cloud deployment targets **Vercel** (frontend), **Render** (backend, Docker) and **Aiven MySQL** — see [Deployment](#deployment).
-
-## Tech Stack
-
-| Layer | Technology |
+| Engineering challenge | Implementation |
 | --- | --- |
-| Frontend | React, Vite, Tailwind CSS |
-| Maps | Leaflet, React Leaflet |
-| Backend | Node.js, Express |
-| Database | MySQL |
-| Realtime | Socket.IO |
-| Auth | JWT + rotating refresh tokens |
-| Charts | Recharts |
-| Deployment | Vercel + Render + Aiven MySQL (cloud); Docker Compose + Nginx (self-host) |
-| Testing | Vitest (frontend) + `node --test` (backend) |
+| Duplicate reports | Haversine distance, category match, text similarity, and recency combine into an explainable score; likely duplicates are surfaced before submission. |
+| Fair prioritization | A 0–100 score weighs category severity, citizen votes, issue age, merged duplicates, nearby issue density, and escalations—and exposes the reasons behind the score. |
+| Concurrent officer claims | Conditional updates inside MySQL transactions ensure two officers cannot claim the same issue. Conflicts return `409`. |
+| Trustworthy resolution | Officers must attach evidence; citizen verification is row-locked and can safely reopen an unresolved issue without duplicate transitions. |
+| Secure sessions | Short-lived JWT access tokens pair with rotating, hashed refresh tokens in `httpOnly` cookies; reuse revokes the entire token family. |
+| Live collaboration | Socket.IO rooms push issue status, map, and notification updates to the relevant users in real time. |
+| Operational accountability | Validated state transitions, SLA deadlines, escalations, moderation signals, and admin audit logs preserve a traceable history. |
 
-## Issue Lifecycle
+## Product tour
 
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/citizen-dashboard.png" alt="Citizen dashboard with issue activity and statistics" />
+      <br /><strong>Citizen dashboard</strong>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/report-issue.png" alt="Geotagged issue reporting form" />
+      <br /><strong>Geotagged reporting</strong>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/issue-map.png" alt="Interactive map of civic issues" />
+      <br /><strong>Interactive issue map</strong>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/admin-dashboard.png" alt="Administrative operations and analytics dashboard" />
+      <br /><strong>Operations dashboard</strong>
+    </td>
+  </tr>
+</table>
+
+## End-to-end workflow
+
+```mermaid
+flowchart LR
+    A[Citizen reports issue] --> B[Duplicate check]
+    B --> C[Department routing]
+    C --> D[Priority + SLA]
+    D --> E[Officer claims issue]
+    E --> F[Work in progress]
+    F --> G[Evidence-backed resolution]
+    G --> H{Citizen verification}
+    H -->|Confirmed| I[Closed]
+    H -->|Still unresolved| J[Reopened]
+    J --> E
 ```
-Submitted
-   ↓
-Under Review
-   ↓
-Assigned
-   ↓
-In Progress
-   ↓
-Resolved
-   ↓
-Closed / Reopened
+
+The backend enforces every transition and the role allowed to perform it. Officers are restricted to their department; administrators can triage and reassign; citizens cannot bypass the lifecycle.
+
+### Role-based capabilities
+
+| Citizen | Municipal officer | Administrator |
+| --- | --- | --- |
+| Report with GPS, map pin, address, and photos | View a department-scoped queue | Triage, assign, and override status |
+| Review duplicate suggestions | Atomically claim available work | Manage users, roles, departments, and categories |
+| Vote, follow, comment, and reply | Update progress and submit resolution evidence | Configure SLA rules and acknowledge escalations |
+| Track status and receive live notifications | Monitor priority reasons and SLA health | Review moderation signals, analytics, and audit logs |
+| Verify a resolution or trigger reopening | Continue only work assigned to the officer | Protect the last remaining administrator account |
+
+## System design
+
+```mermaid
+flowchart TB
+    UI[React + Vite SPA] -->|REST / JWT| API[Express API]
+    UI <-->|Socket.IO| RT[Realtime gateway]
+    API --> AUTH[Auth + RBAC middleware]
+    API --> SVC[Service layer]
+    RT --> SVC
+    SVC --> REPO[Repository layer]
+    REPO --> DB[(MySQL 8)]
+    SVC --> MEDIA[(Validated image storage)]
 ```
 
-Transitions are validated by the backend: each status change is checked against an allowed-transition map and the actor's role, so invalid or out-of-order moves are rejected.
+The codebase separates HTTP controllers, business services, and SQL repositories. The schema contains 22 relational tables for identities, roles, issues, assignments, status history, resolutions, interactions, SLA data, notifications, reports, and audit records.
 
-## Quick start
+### Technology choices
 
-### 1. Docker (recommended)
+| Area | Stack |
+| --- | --- |
+| Client | React 18, Vite 5, Tailwind CSS, React Router |
+| Maps and analytics | Leaflet, React Leaflet, Recharts |
+| API | Node.js 22, Express 4, OpenAPI 3.0 |
+| Data and realtime | MySQL 8, Socket.IO 4 |
+| Security | JWT, bcrypt, Helmet, CORS, rate limiting, upload signature checks |
+| Delivery | Docker, Docker Compose, Nginx, Vercel, Railway |
+| Quality | Node test runner, Vitest, Testing Library, smoke and load suites |
 
-```sh
-cp .env.example .env        # replace every CHANGE_ME value
+## Security and reliability
+
+- Role-based access control with department-level authorization for officers.
+- Refresh-token rotation, SHA-256 token storage, family-based reuse detection, and session revocation.
+- Transactional issue creation, claiming, resolution, assignment, and citizen verification.
+- Strict lifecycle validation prevents invalid or out-of-order status changes.
+- Rate limits cover authentication, registration, password changes, reports, comments, and interactions.
+- Image uploads use MIME and extension allow-lists, blocked dangerous extensions, random filenames, size/count limits, and magic-byte verification.
+- Helmet headers, restrictive CORS, sensitive log redaction, parameterized SQL, and centralized error handling.
+- Separate `/health` and database-aware `/ready` probes support deployment monitoring.
+
+## Run locally
+
+### Docker Compose
+
+Prerequisites: Docker with Compose.
+
+```bash
+git clone https://github.com/alive7z/JanaSahaya.git
+cd JanaSahaya
+cp .env.example .env
+# Replace every CHANGE_ME value, then:
 docker compose up -d --build
 ```
 
-The frontend binds to `127.0.0.1:8080` for a host Nginx reverse proxy; the API and MySQL stay internal to the Compose network. On startup the backend creates the schema, applies migrations, and seeds reference/demo data.
+The frontend is available at `http://localhost:8080`. MySQL and the API remain isolated inside the Compose network, and named volumes preserve database data and uploaded evidence.
 
-For production, HTTPS, backups, and update instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
+### Development mode
 
-### 2. Local development
+Prerequisites: Node.js 22+ and MySQL 8+.
 
-```sh
-# backend
+```bash
+# Terminal 1 — API
 cd backend
-cp .env.example .env        # point DB_* at your MySQL and set secrets
+cp .env.example .env
 npm ci
-npm run db:setup            # creates schema + migrates + seeds
-npm run dev                 # http://localhost:4000
+npm run db:setup
+npm run dev                    # http://localhost:4000
 
-# frontend (separate terminal)
+# Terminal 2 — client
 cd frontend
+cp .env.example .env
 npm ci
-npm run dev                 # http://localhost:5173 (proxies /api, /uploads, /socket.io)
+npm run dev                    # http://localhost:5173
 ```
 
-## Environment variables
+The Vite development server proxies `/api`, `/uploads`, and `/socket.io` to the backend.
 
-Copy the provided examples and replace every placeholder:
+### Required configuration
 
-- Root (Docker Compose): [`.env.example`](.env.example)
-- Backend (local dev): [`backend/.env.example`](backend/.env.example)
+| Group | Variables |
+| --- | --- |
+| Database | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` |
+| Authentication | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` |
+| Browser origin | `CLIENT_ORIGIN` |
+| Bootstrap accounts | `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `OFFICER_EMAIL`, `OFFICER_PASSWORD` |
+| Optional uploads/demo | `UPLOAD_DIR`, `MAX_UPLOAD_MB`, `ENABLE_DEMO_ACCOUNTS`, `DEMO_*` |
 
-Key settings:
-
-- **MySQL** — `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
-- **JWT** — `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` (independent random values)
-- **Origin** — `CLIENT_ORIGIN`, the exact browser-visible origin used by CORS and Socket.IO
-- **Uploads** — `UPLOAD_DIR`, `MAX_UPLOAD_MB`
-- **Demo accounts** — `ENABLE_DEMO_ACCOUNTS`, `DEMO_CITIZEN_EMAIL`, `DEMO_ADMIN_EMAIL`, `DEMO_PASSWORD`
-
-Never commit real secrets.
+Use the checked-in [root environment template](.env.example) for Docker or the [backend environment template](backend/.env.example) for local development. Never commit real credentials.
 
 ## Demo access
 
-When `ENABLE_DEMO_ACCOUNTS=true`, public demo buttons appear on the login page. The seeded demo accounts are:
+The live deployment exposes restricted demo accounts from the login screen:
 
-- **Citizen demo** — `citizen@janasahaya.demo`
-- **Admin demo** — `admin@janasahaya.demo`
+- **Citizen:** `citizen@janasahaya.demo`
+- **Administrator:** `admin@janasahaya.demo`
 
-The demo admin is intentionally restricted: it can explore and manage demo-citizen issues but cannot mutate users, roles, departments, categories, or system configuration. Demo credentials are configurable via `.env`; no production credentials are documented or committed.
+The demo administrator can explore operational flows and manage demo-citizen issues, but the API blocks changes to users, roles, departments, categories, and system configuration. Credentials are supplied by deployment configuration rather than committed source code.
 
-## API documentation
+## API
 
-Interactive OpenAPI documentation is served at `/api/docs`, with the raw spec at `/api/docs/openapi.json`.
+Swagger UI is available at [`/api/docs`](https://janasahaya-production.up.railway.app/api/docs), and the source specification lives in [`backend/docs/openapi.yaml`](backend/docs/openapi.yaml). The specification documents 54 operations across authentication, issues, comments, dashboards, administration, analytics, notifications, and metadata.
+
+```http
+POST   /api/v1/issues/check-duplicates
+POST   /api/v1/issues
+PATCH  /api/v1/issues/:id/accept
+POST   /api/v1/issues/:id/resolve
+POST   /api/v1/issues/:id/verify
+GET    /api/v1/analytics/sla
+GET    /api/v1/admin/audit-logs
+```
+
+All responses use a consistent envelope; request validation and error mapping are centralized in middleware.
 
 ## Testing
 
-```sh
-# backend
+The repository currently passes **43 automated tests**: 20 backend unit tests and 23 frontend component/utility tests.
+
+```bash
 cd backend
-npm test                    # unit tests (node --test)
-npm run test:smoke          # live smoke suite (needs a running backend)
+npm test                       # scoring, geospatial, duplicate, lifecycle rules
+npm run test:smoke             # full role-based flow; requires a running stack
+npm run bench                  # load benchmark; requires a running API
 
-# frontend
-cd frontend
-npm test                    # Vitest
-npm run build               # production build
+cd ../frontend
+npm test                       # component and utility tests
+npm run build                  # production bundle verification
 ```
 
-Backend unit tests cover the Haversine distance, duplicate scoring, text similarity, and priority/status rules. The smoke suite exercises the full role-based lifecycle against a running server.
-
-## Deployment
-
-### Cloud architecture (recommended)
-
-```
-Vercel (React/Vite SPA)
-        │  HTTPS + credentials
-        ▼
-Render Web Service (Node.js + Express + Socket.IO, Docker)
-        │  TLS
-        ▼
-Aiven MySQL 8.4
-```
-
-### A. Aiven MySQL
-
-Create a MySQL 8.4 service in Aiven. Aiven requires **TLS** and provides its own CA
-certificate. Collect the connection fields from the Aiven console:
-
-| Variable | Description |
-| --- | --- |
-| `DB_HOST` | Aiven service host |
-| `DB_PORT` | Aiven service port |
-| `DB_USER` | Aiven user (e.g. `avnadmin`) |
-| `DB_PASSWORD` | Aiven user password |
-| `DB_NAME` | `defaultdb` |
-| `DB_SSL_CA_PATH` | Path to the Aiven CA cert (`/etc/secrets/aiven-ca.pem` on Render) |
-
-SSL mode **REQUIRED**. The app loads the CA and verifies the server
-(`rejectUnauthorized: true`); TLS verification is never disabled and the database
-is never created or dropped by the application.
-
-### B. Render (backend, Docker)
-
-- **Service type:** Web Service
-- **Runtime:** Docker
-- **Root Directory:** `backend`
-- **Docker Build Context:** `.`
-- **Dockerfile:** `./Dockerfile`
-- **Health Check Path:** `/health`
-
-Environment variables: copy the keys from [`backend/.env.example`](backend/.env.example).
-`PORT` is injected by Render and the server binds `0.0.0.0`. On every boot the
-container runs `node src/db/setup.js` (schema → migrations → idempotent seed) and
-then starts the server.
-
-Secret file: add the Aiven CA certificate as a Render **Secret File** named
-`aiven-ca.pem` mounted at `/etc/secrets/aiven-ca.pem`, and set
-`DB_SSL_CA_PATH=/etc/secrets/aiven-ca.pem`.
-
-### C. Vercel (frontend)
-
-- **Root Directory:** `frontend`
-- **Framework Preset:** Vite
-- **Build Command:** `npm run build` · **Output Directory:** `dist`
-
-Environment variables (see [`frontend/.env.example`](frontend/.env.example)):
-
-| Variable | Points to |
-| --- | --- |
-| `VITE_API_URL` | `https://<render-service>.onrender.com/api/v1` |
-| `VITE_SOCKET_URL` | `https://<render-service>.onrender.com` |
-| `VITE_MEDIA_URL` | optional; defaults to `<VITE_SOCKET_URL>/uploads` |
-| `VITE_ENABLE_DEMO_ACCOUNTS` | `true` to show the demo login buttons |
-| `VITE_DEMO_CITIZEN_EMAIL` / `VITE_DEMO_ADMIN_EMAIL` / `VITE_DEMO_PASSWORD` | public demo credentials |
-
-`frontend/vercel.json` adds the SPA rewrite so deep links such as `/login`,
-`/map`, `/issues/123` and `/admin` do not 404.
-
-### D. Verify
-
-```sh
-curl -fsS https://<render-service>.onrender.com/health   # {"status":"ok"}
-curl -fsS https://<render-service>.onrender.com/ready    # {"status":"ready","database":"connected"}
-curl -fsS https://<render-service>.onrender.com/api/docs/openapi.json
-```
-
-Finally set `CLIENT_ORIGIN` on Render to the deployed Vercel origin
-(`https://<project>.vercel.app`) and redeploy so CORS and the refresh cookie match.
-
-### Self-hosting (Docker Compose + Nginx)
-
-The stack can also run on a single Linux host with Docker Compose behind a host
-Nginx TLS reverse proxy — **frontend** (Nginx container), **backend** (Node.js
-container), **MySQL 8** and **uploads** on named volumes. See
-[DEPLOYMENT.md](DEPLOYMENT.md) for the full VPS runbook.
+The backend smoke suite exercises registration, reporting, duplicate checks, permissions, claiming, resolution, verification, and administrative flows against a live server.
 
 ## Project structure
 
-```
-.
+```text
+JanaSahaya/
 ├── backend/
+│   ├── docs/openapi.yaml       # API contract
 │   ├── src/
-│   │   ├── config/         env config + production validation
-│   │   ├── controllers/    request-layer handlers
-│   │   ├── services/       business logic (lifecycle, priority, duplicates, SLA)
-│   │   ├── repositories/   SQL access layer
-│   │   ├── db/             schema.sql, migrations/, setup.js
-│   │   ├── middleware/     auth, RBAC, upload security, rate limiting
-│   │   ├── routes/         API + Swagger mount
-│   │   └── sockets/        Socket.IO realtime hub
-│   ├── docs/openapi.yaml   OpenAPI spec (served at /api/docs)
-│   └── tests/              unit tests + live smoke suite
+│   │   ├── controllers/        # HTTP boundary
+│   │   ├── services/           # business rules and transactions
+│   │   ├── repositories/       # parameterized SQL access
+│   │   ├── middleware/         # auth, validation, limits, uploads
+│   │   ├── sockets/            # realtime rooms and events
+│   │   └── db/                 # schema, migrations, idempotent seed
+│   └── tests/                  # unit, smoke, and load suites
 ├── frontend/
 │   └── src/
-│       ├── pages/          citizen / officer / admin dashboards
-│       ├── components/     common UI, maps, and issue components
-│       ├── services/       axios API layer + token-refresh interceptor
-│       └── context/        auth and Socket.IO providers
-├── docs/screenshots/
-├── deploy/                 Nginx site example
+│       ├── pages/              # citizen, officer, and admin experiences
+│       ├── components/         # maps, issue workflow, shared UI
+│       ├── services/           # REST client and Socket.IO integration
+│       └── context/            # authentication and realtime state
+├── deploy/                     # reverse-proxy configuration
+├── docs/screenshots/           # product tour assets
 ├── docker-compose.yml
-├── .env.example
-└── README.md
+└── DEPLOYMENT.md
 ```
 
-## Security
+## Deployment
 
-- JWT access tokens with rotating refresh tokens in **httpOnly** cookies
-- Refresh-token families with reuse detection
-- Role-based access control with department scoping for officers
-- Rate limiting on auth, registration, password, reporting, commenting, and interactions
-- Secure image validation (allow-lists + magic-byte verification)
-- Helmet with a restrictive Content-Security-Policy
-- Restricted CORS to the configured client origin
-- Sensitive log redaction (authorization headers and cookies)
-- Audit log for administrative actions
+The live system uses Vercel for the React SPA and Railway for the Dockerized API and MySQL database. The repository also supports a single-host deployment with Docker Compose, Nginx TLS termination, health checks, and persistent database/upload volumes.
+
+```text
+Browser ──HTTPS──> Vercel SPA
+   │
+   ├── REST + secure refresh cookie ──> Railway API ──> Railway MySQL
+   └── Socket.IO ─────────────────────> Railway API
+```
+
+Deployment settings are documented by the checked-in environment templates and container configuration; no credentials are stored in the repository.
+
+## Production evolution
+
+The next scaling steps are intentionally clear: move evidence images to object storage, execute SLA escalation in a durable job queue, add browser-level end-to-end tests, and introduce spatial indexes when the issue dataset outgrows the current bounding-box query. These are deployment-scale improvements; the current architecture keeps their boundaries isolated.
+
+---
+
+<div align="center">
+Built to make civic work visible, accountable, and verifiable.
+</div>

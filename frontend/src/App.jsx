@@ -14,6 +14,9 @@ import OfficerDashboard from './pages/OfficerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import Notifications from './pages/Notifications';
 import NotFound from './pages/NotFound';
+import Location from './pages/Location';
+import Profile from './pages/Profile';
+import ReportSuccess from './pages/ReportSuccess';
 
 function AuthGuard({ children }) {
   const { isAuthenticated, booting } = useAuth();
@@ -50,7 +53,10 @@ export default function App() {
               <Route path="/map" element={<Map />} />
               <Route path="/auth" element={<GuestOnly><Auth /></GuestOnly>} />
               <Route path="/report" element={<AuthGuard><ReportIssue /></AuthGuard>} />
+              <Route path="/report-success" element={<AuthGuard><ReportSuccess /></AuthGuard>} />
+              <Route path="/location" element={<AuthGuard><Location /></AuthGuard>} />
               <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
+              <Route path="/profile" element={<AuthGuard><Profile /></AuthGuard>} />
               <Route path="/notifications" element={<AuthGuard><Notifications /></AuthGuard>} />
               <Route path="/officer" element={<RoleGuard roles={['OFFICER', 'ADMIN']}><OfficerDashboard /></RoleGuard>} />
               <Route path="/admin" element={<RoleGuard roles={['ADMIN']}><AdminDashboard /></RoleGuard>} />

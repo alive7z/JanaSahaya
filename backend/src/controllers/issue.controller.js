@@ -6,7 +6,8 @@ import * as voteService from '../services/vote.service.js';
 import * as commentService from '../services/comment.service.js';
 import * as followService from '../services/follow.service.js';
 import { getIssueDetail as detailService } from '../services/issue.service.js';
-import { getNearbyForMap } from '../services/map.service.js';
+import { getMapIssues, getNearbyForMap } from '../services/map.service.js';
+import { ALL_STATUSES } from '../services/status.service.js';
 import { withAudit } from '../repositories/audit.repository.js';
 
 export const create = asyncHandler(async (req, res) => {
@@ -81,6 +82,54 @@ export const nearby = asyncHandler(async (req, res) => {
     radius: parseInt(distance, 10) || 1000,
   });
   success(res, 200, 'Nearby issues fetched', result);
+});
+
+const MAP_RADII = new Set([500, 1000, 2000, 5000]);
+const MAP_PRIORITIES = new Set(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
+
+function mapFilters(query, { admin = false } = {}) {
+  const status = query.status ? String(query.status).split(',').filter(Boolean) : [];
+  if (status.some((value) => !ALL_STATUSES.includes(value))) throw new AppError(422, 'Invalid map status filter');
+  if (query.priority && !MAP_PRIORITIES.has(query.priority)) throw new AppError(422, 'Invalid map priority filter');
+  const categoryId = query.category_id ? Number(query.category_id) : null;
+  const departmentId = query.department_id ? Number(query.department_id) : null;
+  if (query.category_id && (!Number.isInteger(categoryId) || categoryId < 1)) throw new AppError(422, 'Invalid map category filter');
+  if (query.department_id && (!Number.isInteger(departmentId) || departmentId < 1)) throw new AppError(422, 'Invalid map department filter');
+  const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+  if (query.created_from && !datePattern.test(query.created_from)) throw new AppError(422, 'Invalid start date');
+  if (query.created_to && !datePattern.test(query.created_to)) throw new AppError(422, 'Invalid end date');
+  return {
+    status,
+    categoryId,
+    departmentId,
+    priority: query.priority || null,
+    createdFrom: query.created_from || null,
+    createdTo: query.created_to ? `${query.created_to} 23:59:59` : null,
+    includeRejected: admin,
+  };
+}
+
+export const map = asyncHandler(async (req, res) => {
+  const distance = req.query.distance || 'all';
+  const filters = mapFilters(req.query);
+  if (distance === 'all') {
+    const result = await getMapIssues(filters);
+    return success(res, 200, 'Map issues fetched', result);
+  }
+  const radius = Number(distance);
+  const lat = Number(req.query.lat);
+  const lng = Number(req.query.lng);
+  if (!MAP_RADII.has(radius)) throw new AppError(422, 'distance must be all, 500, 1000, 2000, or 5000');
+  if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180) {
+    throw new AppError(422, 'Valid lat and lng are required for distance filtering');
+  }
+  const result = await getMapIssues({ ...filters, lat, lng, radius });
+  return success(res, 200, 'Map issues fetched', result);
+});
+
+export const adminMap = asyncHandler(async (req, res) => {
+  const result = await getMapIssues(mapFilters(req.query, { admin: true }));
+  success(res, 200, 'Admin map issues fetched', result);
 });
 
 export const vote = asyncHandler(async (req, res) => {
@@ -181,6 +230,7 @@ export const officerResolve = asyncHandler(async (req, res) => {
     officerId: req.user.id,
     note: req.body.note,
     evidenceFiles: req.files?.evidence ?? [],
+    req,
   });
   success(res, 200, 'Issue marked resolved', result);
 });

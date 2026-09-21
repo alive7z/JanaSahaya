@@ -66,8 +66,11 @@ export function AuthProvider({ children }) {
   );
 
   const logout = useCallback(async () => {
-    await authService.logout();
-    clearSession();
+    try {
+      await authService.logout();
+    } finally {
+      clearSession();
+    }
   }, [clearSession]);
 
   const hasRole = useCallback(

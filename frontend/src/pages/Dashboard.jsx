@@ -6,7 +6,7 @@ import { Badge, StatusBadge } from '../components/common/Badge';
 import { EmptyState, Spinner } from '../components/common/Button';
 import { useToast } from '../components/common/Toast';
 import { citizenDashboard } from '../services/dashboard';
-import { timeAgo } from '../utils/formatters';
+import { greetingForHour, timeAgo } from '../utils/formatters';
 import { useAuth } from '../context/AuthContext';
 import Illustration from '../components/common/Illustration';
 
@@ -22,8 +22,7 @@ export default function Dashboard() {
 
   const s = data.stats || {};
   const recent = data.recentActivity || [];
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const greeting = greetingForHour();
 
   return (
     <div className="page-shell py-8">
@@ -31,7 +30,7 @@ export default function Dashboard() {
         <div className="absolute -left-20 -top-24 h-56 w-56 rounded-full border-[36px] border-white/10" />
         <div className="relative">
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-brand-100">Citizen dashboard</p>
-          <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">{greeting}, {user?.full_name?.split(' ')[0] || 'neighbour'} 👋</h1>
+          <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">{greeting}, {user?.full_name?.split(' ')[0] || 'neighbour'}</h1>
           <p className="mt-2 text-lg font-medium text-brand-50">Help make your community better.</p>
           <p className="mt-4 text-sm text-brand-100">
             Your contribution: <span className="inline-flex items-center gap-1 font-semibold text-amber-200"><Star className="h-3.5 w-3.5" /> {s.contributionPoints ?? 0} points</span>
@@ -42,7 +41,7 @@ export default function Dashboard() {
             )}
           </p>
         </div>
-        <Illustration name="citizen-dashboard" alt="Citizen using JanaSetu in a modern city" eager className="relative ml-auto hidden w-72 lg:block" />
+        <Illustration name="citizen-dashboard" alt="Citizen using JanaSahaya in a modern city" eager className="relative ml-auto hidden w-72 lg:block" />
       </section>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -26,6 +26,13 @@ export function timeAgo(value) {
   return `${months}mo ago`;
 }
 
+export function greetingForHour(hour = new Date().getHours()) {
+  if (hour >= 5 && hour < 12) return 'Good morning';
+  if (hour >= 12 && hour < 16) return 'Good afternoon';
+  if (hour >= 16 && hour < 21) return 'Good evening';
+  return 'Good night';
+}
+
 export function distanceLabel(metres) {
   if (metres == null) return '';
   if (metres < 1000) {
@@ -60,6 +67,22 @@ export function plural(n, word) {
 
 export function clsx(...args) {
   return args.filter(Boolean).join(' ');
+}
+
+const LABEL_ACRONYMS = new Set([
+  'SLA', 'ID', 'URL', 'API', 'GPS', 'UUID', 'PDF', 'CSV', 'SMS', 'OTP',
+]);
+
+export function formatLabel(value) {
+  if (value == null || value === '') return '';
+  return String(value)
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w+/g, (word) =>
+      LABEL_ACRONYMS.has(word.toUpperCase())
+        ? word.toUpperCase()
+        : word.charAt(0).toUpperCase() + word.slice(1),
+    );
 }
 
 export function mediaPath(p) {

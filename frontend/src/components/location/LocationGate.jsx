@@ -17,7 +17,7 @@ export default function LocationGate({ onContinue }) {
         <div className="order-1 mx-auto w-full max-w-lg lg:order-2">
           <span className="section-kicker"><MapPin className="h-3.5 w-3.5" /> Personalise nearby issues</span>
           <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-slate-950 sm:text-5xl">Enable Your Location</h1>
-          <p className="mt-4 text-base leading-7 text-slate-600">Your location helps JanaSetu accurately identify civic issues and display nearby reports.</p>
+          <p className="mt-4 text-base leading-7 text-slate-600">Your location helps JanaSahaya accurately identify civic issues and display nearby reports.</p>
 
           <div className="card mt-7 p-6">
             <div className="flex gap-3 rounded-xl bg-brand-50 p-4 text-sm leading-6 text-brand-900">

@@ -13,12 +13,11 @@ try {
   spec = YAML.parse(yaml);
 } catch (err) {
   logger.warn('Failed to load openapi.yaml: %s', err.message);
-  spec = { openapi: '3.0.3', info: { title: 'Civic Issues API', version: '1.0.0' }, paths: {} };
+  spec = { openapi: '3.0.3', info: { title: 'JanaSahaya API', version: '1.0.0' }, paths: {} };
 }
 
 const router = Router();
 
-// Machine-readable spec.
 router.get('/openapi.json', (_req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   res.json(spec);

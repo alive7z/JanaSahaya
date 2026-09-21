@@ -6,7 +6,9 @@ RUN npm ci
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY --chown=node:node . .
+RUN mkdir -p /app/uploads && chown -R node:node /app/uploads
+USER node
 EXPOSE 4000
 
 # schema + migrations + seed run at first boot; server starts after DB is healthy.

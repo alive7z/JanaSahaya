@@ -1,10 +1,12 @@
 import { clsx } from '../../utils/formatters';
+import VisualState from './VisualState';
 
 export function Button({ variant = 'primary', size = 'md', className, ...props }) {
   const variants = {
     primary: 'btn-primary',
     secondary: 'btn-secondary',
     danger: 'btn-danger',
+    'danger-soft': 'btn bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200 hover:bg-rose-100',
   };
   const sizes = {
     sm: 'px-3 py-1.5 text-xs',
@@ -23,14 +25,17 @@ export function Spinner({ label = 'Loading…', className }) {
   );
 }
 
-export function EmptyState({ title = 'Nothing here yet', body, action }) {
+export function EmptyState({ title = 'Nothing here yet', body, action, illustration, type, compact, className }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
-      <span className="text-3xl">📭</span>
-      <p className="font-medium text-slate-700">{title}</p>
-      {body && <p className="max-w-sm text-sm text-slate-500">{body}</p>}
-      {action}
-    </div>
+    <VisualState
+      title={title}
+      body={body}
+      action={action}
+      illustration={illustration}
+      type={type}
+      compact={compact}
+      className={className}
+    />
   );
 }
 

@@ -25,6 +25,7 @@ import {
   adminUpdateSlaRule, adminUpdateCategory, adminIssuesReassign, adminStatusOverride,
   adminToggleBan,
 } from '../services/admin';
+import Illustration from '../components/common/Illustration';
 
 const PIE_COLORS = ['#0ea5e9', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#64748b'];
 
@@ -41,9 +42,16 @@ export default function AdminDashboard() {
     `inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium ${tab === name ? 'bg-brand-50 text-brand-700' : 'text-slate-500 hover:bg-slate-100'}`;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-slate-900">Admin console</h1>
-      <p className="mt-1 text-sm text-slate-600">Platform-wide stats, governance and moderation.</p>
+    <div className="page-shell py-8">
+      <section className="relative grid min-h-52 items-center overflow-hidden rounded-3xl bg-slate-950 px-7 py-8 text-white shadow-soft sm:px-9 lg:grid-cols-[1fr_300px]">
+        <div className="absolute right-0 top-0 h-64 w-64 opacity-20 dot-pattern" />
+        <div className="relative">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-300">JanaSetu Administration</p>
+          <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">Administration Command Center</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">Monitor reports, coordinate departments and track civic issue resolution.</p>
+        </div>
+        <Illustration name="admin-dashboard" alt="Administrator monitoring civic analytics" eager className="relative ml-auto hidden w-64 lg:block" />
+      </section>
 
       <div className="mt-4 flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1">
         {TABS.map((t) => (
@@ -98,6 +106,10 @@ function OverviewTab({ stats, toast }) {
 
   return (
     <div className="mt-6">
+      <div className="mb-6 flex items-center justify-between overflow-hidden rounded-2xl border border-brand-100 bg-brand-50/60 px-5 py-4">
+        <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-700">Analytics overview</p><p className="mt-1 text-sm text-slate-600">Live operational performance across the city.</p></div>
+        <Illustration name="analytics" alt="Analyst viewing city data" className="hidden w-32 sm:block" />
+      </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total users" value={stats.users} icon={Users} />
         <StatCard label="Total issues" value={stats.issues} icon={FileText} />
@@ -271,7 +283,7 @@ function IssuesTab({ toast }) {
               </tr>
             ))}
             {!rows.issues?.length && (
-              <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-400">No issues match the filters.</td></tr>
+              <tr><td colSpan={7} className="p-4"><EmptyState compact illustration="admin-map-empty" title="No reported issues match these filters." body="Try changing or clearing the current filters." /></td></tr>
             )}
           </tbody>
         </table>
@@ -342,7 +354,7 @@ function UsersTab({ toast }) {
             </div>
           </div>
         ))}
-        {!rows.users?.length && <EmptyState title="No users found" />}
+        {!rows.users?.length && <EmptyState compact illustration="no-results" title="No users found" />}
       </div>
       <Pagination page={rows.page} pages={rows.pages} onChange={setPage} />
     </div>
@@ -394,18 +406,21 @@ function AuditTab({ toast }) {
     adminAuditLogs({ page: 1 }).then(setRows).catch((e) => toast.error(e, 'Could not load audit log'));
   }, []);
   return (
-    <div className="card mt-6 divide-y divide-slate-100">
-      {!rows.logs?.length ? (
-        <EmptyState title="No audit entries yet" />
-      ) : rows.logs.map((a) => (
-        <div key={a.id} className="px-4 py-3 text-sm">
-          <p className="text-slate-700">
-            <span className="font-medium">{a.actor_name || 'system'}</span> {a.action}
-            {a.resource_type ? <span className="text-slate-500"> → {a.resource_type}{a.resource_id ? ` #${a.resource_id}` : ''}</span> : null}
-          </p>
-          <p className="mt-0.5 text-xs text-slate-400">{a.ip ?? ''} · {a.user_agent ?? ''} · {new Date(a.created_at).toLocaleString()}</p>
-        </div>
-      ))}
+    <div className="mt-6">
+      <div className="mb-4 flex items-center justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+        <div><h2 className="font-bold text-slate-900">Audit history</h2><p className="mt-1 text-sm text-slate-500">Security-sensitive administrative activity and accountability records.</p></div>
+        <Illustration name="audit" alt="Documents and security audit history" className="hidden w-32 sm:block" />
+      </div>
+      <div className="card divide-y divide-slate-100 overflow-hidden">
+        {!rows.logs?.length ? (
+          <EmptyState compact illustration="audit" title="No audit entries yet" body="Administrative actions will appear here." />
+        ) : rows.logs.map((a) => (
+          <div key={a.id} className="px-4 py-3 text-sm">
+            <p className="text-slate-700"><span className="font-medium">{a.actor_name || 'system'}</span> {a.action}{a.resource_type ? <span className="text-slate-500"> → {a.resource_type}{a.resource_id ? ` #${a.resource_id}` : ''}</span> : null}</p>
+            <p className="mt-0.5 text-xs text-slate-400">{a.ip ?? ''} · {a.user_agent ?? ''} · {new Date(a.created_at).toLocaleString()}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -509,7 +524,7 @@ function ModerationTab({ toast }) {
   return (
     <div className="card mt-6 divide-y divide-slate-100">
       {!rows.length ? (
-        <EmptyState title="No pending reports" body="User reports against comments or issues appear here." />
+        <EmptyState compact illustration="admin-map-empty" title="No pending reports" body="The moderation queue is clear. User reports will appear here." />
       ) : rows.map((r) => (
         <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="min-w-0">

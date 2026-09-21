@@ -11,6 +11,7 @@ const illustrations = {
   'reports-empty': '/illustrations/reports-empty.svg',
   'map-empty': '/illustrations/map-empty.svg',
   'admin-dashboard': '/illustrations/admin-dashboard.svg',
+  'admin-command-center': '/illustrations/admin-command-center.svg',
   'admin-map-empty': '/illustrations/admin-map-empty.svg',
   audit: '/illustrations/audit.svg',
   analytics: '/illustrations/analytics.svg',

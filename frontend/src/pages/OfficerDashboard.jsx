@@ -13,6 +13,7 @@ import { useToast } from '../components/common/Toast';
 import { officerDashboard } from '../services/dashboard';
 import { acceptIssue, resolveIssue } from '../services/issues';
 import { useAuth } from '../context/AuthContext';
+import Illustration from '../components/common/Illustration';
 
 function timeLeftLabel(deadline) {
   const diff = new Date(deadline) - Date.now();
@@ -78,16 +79,18 @@ export default function OfficerDashboard() {
   if (!data) return <Spinner label="Loading officer console…" />;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="page-shell py-8">
+      <section className="grid min-h-48 items-center overflow-hidden rounded-3xl border border-brand-100 bg-gradient-to-r from-brand-50 to-white px-7 py-6 lg:grid-cols-[1fr_260px]">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Officer console</h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-700">Department operations</p>
+          <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-950">Officer workspace</h1>
+          <p className="mt-2 text-sm text-slate-600">
             {user?.full_name || 'Officer'} · {data.department?.name || 'Unknown department'}
           </p>
+          <div className="mt-4"><Badge color="brand">Priority queue: {priorityQueue.length}</Badge></div>
         </div>
-        <Badge color="brand">Priority queue: {priorityQueue.length}</Badge>
-      </div>
+        <Illustration name="admin-dashboard" alt="Civic officer coordinating city issue resolution" eager className="ml-auto hidden w-56 lg:block" />
+      </section>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Open in department" value={data.stats?.open_in_department ?? 0} icon={AlertOctagon} />
@@ -99,7 +102,7 @@ export default function OfficerDashboard() {
       <section className="mt-10">
         <h2 className="mb-4 text-lg font-semibold text-slate-900">Priority queue — needs attention</h2>
         {!priorityQueue.length ? (
-          <EmptyState title="All caught up" body="No unassigned issues are waiting in the queue." />
+          <EmptyState compact illustration="admin-map-empty" title="All caught up" body="No unassigned issues are waiting in the queue." />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {priorityQueue.map((issue) => (
@@ -125,7 +128,7 @@ export default function OfficerDashboard() {
       <section className="mt-10">
         <h2 className="mb-2 text-lg font-semibold text-slate-900">Assigned to you — in progress</h2>
         {!assigned.length ? (
-          <p className="text-sm text-slate-500">No assigned issues in progress.</p>
+          <EmptyState compact illustration="reports-empty" title="No assigned issues" body="Accepted issues will appear here while work is in progress." />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {assigned.map((issue) => {
@@ -168,7 +171,7 @@ export default function OfficerDashboard() {
       <section className="mt-10">
         <h2 className="mb-4 text-lg font-semibold text-slate-900">All open in your department</h2>
         {!openInDept.length ? (
-          <p className="text-sm text-slate-500">No open issues in your department.</p>
+          <EmptyState compact illustration="admin-map-empty" title="No open department issues" body="There is no active queue for your department." />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {openInDept.map((issue) => (

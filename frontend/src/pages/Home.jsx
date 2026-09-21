@@ -66,7 +66,7 @@ export default function Home() {
           <div className="relative mx-auto w-full max-w-2xl lg:max-w-none">
             <div className="absolute inset-x-12 bottom-6 h-20 rounded-[50%] bg-brand-200/40 blur-2xl" />
             <img
-              src="/images/citizen-dashboard.png"
+              src="/images/citizen.png"
               alt="Citizen reporting a garbage issue through JanaSahaya"
               width="1536"
               height="1024"

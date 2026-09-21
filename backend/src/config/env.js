@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -9,14 +10,52 @@ const DEVELOPMENT_DEFAULTS = {
   jwt: ['dev_access_secret', 'dev_refresh_secret'],
 };
 
+/** Interpret TRUST_PROXY: false | true | hop count | IP/CIDR list. */
+function parseTrustProxy(value) {
+  if (value == null || value === '') return 1;
+  const normalized = String(value).trim();
+  if (normalized === 'false' || normalized === '0') return false;
+  if (normalized === 'true') return true;
+  const hops = Number(normalized);
+  if (Number.isInteger(hops) && hops >= 0) return hops;
+  return normalized; // comma-separated subnets
+}
+
+const isPlaceholder = (value = '') =>
+  /change[_-]?me|openssl|\$\(|example_password/i.test(value);
+
+/**
+ * CLIENT_ORIGIN supports a comma-separated list. Non-production additionally
+ * allows the local Vite dev server and the Docker Nginx origin so local
+ * development keeps working without weakening production CORS.
+ */
+function resolveClientOrigins() {
+  const configured = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  if (isProd) return configured;
+
+  const devDefaults = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:8080',
+    'http://127.0.0.1:8080',
+  ];
+  return [...new Set([...configured, ...devDefaults])];
+}
+
+const clientOrigins = resolveClientOrigins();
+
 const env = {
   nodeEnv,
   isDev: !isProd,
   isProd,
-  service: process.env.SERVICE_NAME || 'civic-issues-api',
+  service: process.env.SERVICE_NAME || 'janasahaya-api',
   version: process.env.SERVICE_VERSION || '1.0.0',
   port: parseInt(process.env.PORT || '4000', 10),
-  trustProxy: String(process.env.TRUST_PROXY || '1') === '1',
+  trustProxy: parseTrustProxy(process.env.TRUST_PROXY ?? '1'),
 
   db: {
     host: process.env.DB_HOST || '127.0.0.1',
@@ -24,7 +63,8 @@ const env = {
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'civic_issues',
-    connectionLimit: parseInt(process.env.DB_POOL_SIZE || '10', 10),
+    sslCaPath: process.env.DB_SSL_CA_PATH || '',
+    connectionLimit: parseInt(process.env.DB_POOL_SIZE || '5', 10),
   },
 
   jwt: {
@@ -45,7 +85,9 @@ const env = {
     interactionMax: parseInt(process.env.RATE_LIMIT_INTERACTION_MAX || '120', 10),
   },
 
-  clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  // Primary origin kept for convenience; use clientOrigins for CORS allow-lists.
+  clientOrigin: clientOrigins[0],
+  clientOrigins,
   cookie: {
     name: process.env.COOKIE_NAME || 'civic_refresh',
     secure: String(process.env.COOKIE_SECURE ?? (isProd ? 'true' : 'false')) === 'true',
@@ -73,12 +115,29 @@ const env = {
 };
 
 export function validateConfig() {
+  const issues = [];
+
+  // Optional, but if configured the CA file must exist (Aiven TLS).
+  if (env.db.sslCaPath && !fs.existsSync(env.db.sslCaPath)) {
+    issues.push(`DB_SSL_CA_PATH points to a missing file: ${env.db.sslCaPath}`);
+  }
+
+  if (!Number.isInteger(env.db.connectionLimit) || env.db.connectionLimit < 1) {
+    issues.push('DB_POOL_SIZE must be a positive integer');
+  }
+
   if (isProd) {
-    const issues = [];
-    const isPlaceholder = (value = '') => /change[_-]?me|openssl|\$\(|example_password/i.test(value);
-    const required = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD', 'JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET', 'CLIENT_ORIGIN'];
+    const required = [
+      'DB_HOST',
+      'DB_NAME',
+      'DB_USER',
+      'DB_PASSWORD',
+      'JWT_ACCESS_SECRET',
+      'JWT_REFRESH_SECRET',
+      'CLIENT_ORIGIN',
+    ];
     required.forEach((name) => {
-      if (!process.env[name]?.trim()) issues.push(`${name} is required in production`);
+      if (!process.env[name]?.trim()) issues.push(`Missing required environment variable: ${name}`);
     });
     if (DEVELOPMENT_DEFAULTS.jwt.includes(env.jwt.accessSecret) || env.jwt.accessSecret.length < 32) {
       issues.push('JWT_ACCESS_SECRET must be a unique secret of at least 32 characters');
@@ -96,14 +155,16 @@ export function validateConfig() {
     if (!/^[A-Za-z0-9_]+$/.test(env.db.database)) {
       issues.push('DB_NAME may contain only letters, numbers, and underscores');
     }
-    try {
-      const origin = new URL(env.clientOrigin);
-      if (origin.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(origin.hostname)) {
-        issues.push('CLIENT_ORIGIN must use HTTPS in production');
+    env.clientOrigins.forEach((value) => {
+      try {
+        const origin = new URL(value);
+        if (origin.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(origin.hostname)) {
+          issues.push(`CLIENT_ORIGIN must use HTTPS in production: ${value}`);
+        }
+      } catch {
+        issues.push(`CLIENT_ORIGIN must be a valid absolute origin: ${value}`);
       }
-    } catch {
-      issues.push('CLIENT_ORIGIN must be a valid absolute origin');
-    }
+    });
     if (!['lax', 'strict', 'none'].includes(env.cookie.sameSite)) {
       issues.push('COOKIE_SAME_SITE must be lax, strict, or none');
     }
@@ -129,9 +190,11 @@ export function validateConfig() {
         issues.push('DEMO_PASSWORD must be a non-placeholder value of at least 8 characters');
       }
     }
-    if (issues.length) {
-      throw new Error(`Refusing to start in production:\n - ${issues.join('\n - ')}`);
-    }
+  }
+
+  if (issues.length) {
+    const heading = isProd ? 'Refusing to start in production' : 'Invalid configuration';
+    throw new Error(`${heading}:\n - ${issues.join('\n - ')}`);
   }
   return env;
 }

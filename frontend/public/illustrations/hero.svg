@@ -1,11 +1,167 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" role="img" aria-labelledby="t d">
-  <title id="t">Citizen reporting a civic issue</title><desc id="d">A citizen uses a phone beside a clean city, map pin and civic report card.</desc>
-  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e8f4ff"/><stop offset="1" stop-color="#f7fbff"/></linearGradient></defs>
-  <path fill="url(#g)" d="M77 87c57-63 148-69 214-34 54 28 91 3 156 6 91 5 147 77 128 162-18 78 21 117-48 176-61 53-137 21-207 34-90 17-202 7-243-66-36-64 20-102 0-164-13-39-30-79 0-114z"/>
-  <g fill="#cbe5ff"><circle cx="103" cy="138" r="9"/><circle cx="530" cy="106" r="12"/><path d="M486 61h6v28h-6zM475 72h28v6h-28z"/></g>
-  <g transform="translate(310 156)"><path fill="#b9d9f6" d="M0 80h230v174H0z"/><path fill="#fff" d="M17 48h55v206H17zM89 91h58v163H89zM164 27h49v227h-49z"/><g fill="#72aee8"><path d="M29 67h13v13H29zM49 67h13v13H49zM29 95h13v13H29zM101 110h14v14h-14zM121 110h14v14h-14zM176 47h11v14h-11zM194 47h11v14h-11zM176 75h11v14h-11z"/></g><path stroke="#94bde4" stroke-width="8" d="M-18 254h267"/></g>
-  <g transform="translate(104 104)"><circle cx="86" cy="62" r="31" fill="#f2b89b"/><path fill="#173f7a" d="M55 59c0-31 16-45 36-45 26 0 37 18 36 42-12-8-20-16-25-29-9 18-25 27-47 32z"/><path fill="#1b6ef5" d="M44 220c3-76 15-120 44-120s49 45 54 120z"/><path fill="#f2b89b" d="M55 126 8 192l20 11 55-58z"/><path fill="#163b6d" d="m7 189 26 7-12 60H0z"/><rect x="0" y="176" width="38" height="67" rx="8" fill="#fff" stroke="#1b6ef5" stroke-width="5"/><circle cx="19" cy="229" r="3" fill="#1b6ef5"/><path fill="#173f7a" d="M48 218h30v111H54zM108 218h30l18 111h-25z"/><path fill="#f2b89b" d="m136 128 47 37-13 17-57-31z"/></g>
-  <g transform="translate(430 86)"><path fill="#1b6ef5" d="M44 0a44 44 0 0 1 44 44c0 35-44 82-44 82S0 79 0 44A44 44 0 0 1 44 0z"/><circle cx="44" cy="44" r="19" fill="#fff"/><path fill="none" stroke="#1b6ef5" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" d="m34 44 7 7 15-17"/></g>
-  <g transform="translate(274 257)"><rect width="128" height="94" rx="18" fill="#fff" stroke="#b9d9f6" stroke-width="3"/><circle cx="28" cy="28" r="12" fill="#ffbf47"/><path fill="#d9edff" d="M49 19h55v8H49zM49 34h39v7H49zM21 57h83v8H21zM21 72h61v8H21z"/></g>
-  <path fill="#51b37f" d="M68 366c33-22 54-14 66 25-36 4-57-4-66-25zM524 374c25-32 48-31 68 4-31 15-54 13-68-4z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 650" role="img" aria-labelledby="title description">
+  <title id="title">Citizen reporting a civic issue in a clean modern city</title>
+  <desc id="description">A young citizen submits a geolocated pothole report by smartphone as JanaSahaya routes it toward civic resolution.</desc>
+
+  <defs>
+    <linearGradient id="sky" x1="105" y1="65" x2="590" y2="560" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#eef7ff"/>
+      <stop offset="1" stop-color="#d9edff"/>
+    </linearGradient>
+    <linearGradient id="shirt" x1="365" y1="275" x2="492" y2="456" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#338eff"/>
+      <stop offset="1" stop-color="#1b6ef5"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#0F172A" flood-opacity=".12"/>
+    </filter>
+  </defs>
+
+  <g id="background">
+    <path fill="url(#sky)" d="M89 155C121 66 226 35 316 70c76 30 127-17 220 16 90 31 135 117 112 209-20 79 11 133-59 208-76 82-182 71-283 70-108-1-210 10-254-82-40-84 17-143 17-219 0-43 4-77 20-117Z"/>
+    <circle cx="411" cy="278" r="154" fill="#FFFFFF" opacity=".7"/>
+    <g fill="none" stroke="#8ecdff" stroke-linecap="round" opacity=".35">
+      <path d="M411 87v-35"/>
+      <path d="m515 113 18-31"/>
+      <path d="m584 187 31-18"/>
+      <path d="M605 285h37"/>
+      <path d="m301 112-18-31"/>
+      <path d="m230 187-31-18"/>
+    </g>
+    <g fill="#8ecdff" opacity=".7">
+      <circle cx="97" cy="120" r="5"/>
+      <circle cx="619" cy="129" r="7"/>
+      <circle cx="651" cy="332" r="4"/>
+      <path d="M556 64h5v23h-5zM547 73h23v5h-23z"/>
+      <path d="M116 282h4v18h-4zM109 289h18v4h-18z"/>
+    </g>
+  </g>
+
+  <g id="city" opacity=".92">
+    <path fill="#FFFFFF" d="M44 282h116v222H44z"/>
+    <path fill="#d9edff" d="M61 250h84v254H61z"/>
+    <path fill="#FFFFFF" d="M112 314h105v190H112z"/>
+    <path fill="#bce0ff" d="M536 269h113v235H536z"/>
+    <path fill="#FFFFFF" d="M574 226h60v278h-60z"/>
+    <g fill="#8ecdff">
+      <path d="M75 278h16v19H75zM109 278h16v19h-16zM75 316h16v19H75zM109 316h16v19h-16z"/>
+      <path d="M130 342h19v19h-19zM169 342h19v19h-19zM130 380h19v19h-19zM169 380h19v19h-19z"/>
+      <path d="M552 299h18v20h-18zM589 299h18v20h-18zM552 339h18v20h-18zM589 339h18v20h-18z"/>
+      <path d="M586 251h12v17h-12zM611 251h12v17h-12z"/>
+    </g>
+    <path fill="#E2E8F0" d="M34 494h632v34H34z"/>
+    <path fill="#CBD5E1" d="M34 520h632v12H34z"/>
+    <path fill="#64748B" d="M34 532h632v78H34z"/>
+    <path fill="#FFFFFF" d="M64 568h80v8H64zM206 568h80v8h-80zM540 568h80v8h-80z" opacity=".85"/>
+  </g>
+
+  <g id="streetlight">
+    <path d="M91 490V322c0-25 17-43 41-43h22" fill="none" stroke="#1E293B" stroke-width="9" stroke-linecap="round"/>
+    <path fill="#1E293B" d="M141 265h44v23h-44z"/>
+    <path fill="#FEF3C7" d="M149 270h28v12h-28z"/>
+    <path fill="#0F172A" d="M73 488h37l9 16H64z"/>
+  </g>
+
+  <g id="tree">
+    <path fill="#8B5E3C" d="M612 420h13v85h-13z"/>
+    <path fill="#86CFA5" d="M619 333c-39 7-60 33-51 62 5 17 18 25 34 25-2 17 8 31 25 35 24 5 44-12 43-36 17-7 26-26 19-44-9-24-35-31-54-20-3-16-7-24-16-22Z"/>
+    <path d="M623 349c-9 34-9 62-3 92M620 386l-25-17M621 405l28-23" fill="none" stroke="#4FA978" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <g id="route" fill="none" stroke="#338eff" stroke-linecap="round">
+    <path d="M163 242c-29 74-22 144 38 177 49 27 114 4 149-38" stroke-width="5" stroke-dasharray="2 15"/>
+    <circle cx="198" cy="416" r="7" fill="#FFFFFF" stroke-width="4"/>
+    <circle cx="292" cy="416" r="7" fill="#FFFFFF" stroke-width="4"/>
+  </g>
+
+  <g id="location-pin" filter="url(#softShadow)">
+    <path fill="#1b6ef5" d="M162 133c-35 0-63 28-63 63 0 50 63 109 63 109s63-59 63-109c0-35-28-63-63-63Z"/>
+    <circle cx="162" cy="195" r="27" fill="#FFFFFF"/>
+    <circle cx="162" cy="195" r="11" fill="#338eff"/>
+    <circle cx="218" cy="133" r="13" fill="#FFFFFF" stroke="#bce0ff" stroke-width="3"/>
+    <circle cx="218" cy="133" r="4" fill="#59b0ff"/>
+  </g>
+
+  <g id="pothole">
+    <ellipse cx="165" cy="535" rx="72" ry="24" fill="#334155"/>
+    <path fill="#0F172A" d="M106 532c15-13 31-8 45-17 15-10 28-4 42 3 13 6 30 2 43 16-23 17-104 20-130-2Z"/>
+    <path d="M119 523c13 4 21 0 31-7M179 518c13 9 24 11 37 8" fill="none" stroke="#64748B" stroke-width="4" stroke-linecap="round"/>
+    <path d="M84 515 69 492M91 510l-3-29" fill="none" stroke="#F59E0B" stroke-width="5" stroke-linecap="round"/>
+  </g>
+
+  <g id="character" filter="url(#softShadow)">
+    <ellipse cx="426" cy="590" rx="119" ry="19" fill="#0F172A" opacity=".14"/>
+
+    <g id="legs">
+      <path fill="#1E293B" d="M377 441h58l-12 134h-44z"/>
+      <path fill="#0F172A" d="M421 441h62l43 131-42 12-55-105z"/>
+      <path fill="#FFFFFF" d="m377 570 46 1 5 24h-83c1-14 13-23 32-25Z"/>
+      <path fill="#FFFFFF" d="m485 568 43-12 16 20c-14 17-44 25-76 23-3-12 3-23 17-31Z"/>
+      <path fill="#1b6ef5" d="M348 588h80v8h-83zM473 590c27-1 50-8 65-20l6 7c-14 17-44 24-76 22z"/>
+    </g>
+
+    <g id="body">
+      <path fill="url(#shirt)" d="M351 300c13-31 42-47 78-46 38 0 69 17 79 52l9 139c-48 23-119 22-177-1z"/>
+      <path fill="#1457e1" d="M451 258c22 6 42 21 52 43l-13 99-35-31z" opacity=".55"/>
+      <path d="M377 317c12 22 14 74 7 112" fill="none" stroke="#59b0ff" stroke-width="6" stroke-linecap="round" opacity=".7"/>
+      <path fill="#FFFFFF" d="M396 269c10 19 22 30 34 30 13 0 24-11 34-31-20-15-49-17-68 1Z"/>
+      <path fill="#E5A889" d="M412 244h37v35c-10 13-28 13-38 0z"/>
+    </g>
+
+    <g id="head">
+      <ellipse cx="430" cy="203" rx="58" ry="65" fill="#EFB28F"/>
+      <path fill="#0F172A" d="M373 205c-7-54 20-88 65-86 42 2 63 36 51 84-14-17-23-36-26-56-18 23-47 39-90 45z"/>
+      <path fill="#0F172A" d="M480 178c13 18 9 49-1 68 18-5 29-23 27-44-2-18-10-31-26-39z"/>
+      <ellipse cx="407" cy="207" rx="4" ry="5" fill="#1E293B"/>
+      <ellipse cx="455" cy="207" rx="4" ry="5" fill="#1E293B"/>
+      <path d="M415 231c10 10 22 10 32 0" fill="none" stroke="#9A4F43" stroke-width="4" stroke-linecap="round"/>
+      <path d="M401 191c7-4 14-4 20 0M444 190c7-4 14-3 20 1" fill="none" stroke="#1E293B" stroke-width="4" stroke-linecap="round"/>
+    </g>
+
+    <g id="arms-and-phone">
+      <path d="M365 317c-24 17-42 42-57 72" fill="none" stroke="#EFB28F" stroke-width="25" stroke-linecap="round"/>
+      <path d="M495 317c-8 40-28 72-61 93" fill="none" stroke="#EFB28F" stroke-width="25" stroke-linecap="round"/>
+      <path fill="#1E293B" d="m296 337 51-9 16 94-51 9z"/>
+      <rect x="303" y="342" width="42" height="72" rx="7" fill="#FFFFFF"/>
+      <path fill="#d9edff" d="M311 352h26v27h-26z"/>
+      <path d="m315 372 6-7 6 5 6-9" fill="none" stroke="#1b6ef5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="329" cy="402" r="3" fill="#64748B"/>
+      <circle cx="314" cy="399" r="10" fill="#EFB28F"/>
+      <circle cx="429" cy="410" r="11" fill="#EFB28F"/>
+    </g>
+  </g>
+
+  <g id="report-card" filter="url(#softShadow)">
+    <rect x="491" y="95" width="173" height="137" rx="22" fill="#FFFFFF"/>
+    <circle cx="522" cy="128" r="17" fill="#d9edff"/>
+    <path fill="#1b6ef5" d="M522 116a11 11 0 0 1 11 11c0 9-11 21-11 21s-11-12-11-21a11 11 0 0 1 11-11z"/>
+    <circle cx="522" cy="127" r="4" fill="#FFFFFF"/>
+    <path fill="#1E293B" d="M549 116h77v8h-77z" opacity=".9"/>
+    <path fill="#CBD5E1" d="M549 132h53v7h-53z"/>
+    <rect x="510" y="160" width="58" height="45" rx="10" fill="#eef7ff"/>
+    <path fill="#8ecdff" d="m518 196 13-15 9 9 8-7 13 13z"/>
+    <circle cx="550" cy="173" r="5" fill="#F59E0B"/>
+    <rect x="579" y="163" width="66" height="30" rx="15" fill="#DCFCE7"/>
+    <path d="m592 178 6 6 12-14" fill="none" stroke="#16A34A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path fill="#16A34A" d="M616 174h17v6h-17z" opacity=".7"/>
+  </g>
+
+  <g id="workflow" filter="url(#softShadow)">
+    <path d="M488 275h112" fill="none" stroke="#8ecdff" stroke-width="4" stroke-linecap="round" stroke-dasharray="5 9"/>
+    <circle cx="493" cy="275" r="24" fill="#FFFFFF"/>
+    <path fill="#1b6ef5" d="M483 263h20v24h-20z"/>
+    <path d="M487 270h12M487 276h12M487 282h8" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="548" cy="275" r="24" fill="#FFFFFF"/>
+    <path fill="#1E293B" d="m535 271 13-10 13 10v16h-26z"/>
+    <path fill="#8ecdff" d="M544 275h8v12h-8z"/>
+    <circle cx="605" cy="275" r="24" fill="#FFFFFF"/>
+    <circle cx="605" cy="275" r="14" fill="#DCFCE7"/>
+    <path d="m598 275 5 5 10-12" fill="none" stroke="#16A34A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <g id="plants">
+    <path d="M60 506c-1-36 12-61 39-77M84 506c5-30 23-51 51-62" fill="none" stroke="#4FA978" stroke-width="7" stroke-linecap="round"/>
+    <path fill="#86CFA5" d="M93 444c-30-6-45-20-45-42 27-1 44 13 45 42zM112 458c4-28 19-44 43-48 2 26-12 43-43 48zM73 477c-24-5-36-17-36-35 22-1 35 11 36 35z"/>
+    <path d="M621 508c1-27 12-47 33-59" fill="none" stroke="#4FA978" stroke-width="7" stroke-linecap="round"/>
+    <path fill="#86CFA5" d="M647 463c-22-4-34-15-35-33 22 0 34 11 35 33zM650 480c3-22 15-35 34-38 1 21-10 34-34 38z"/>
+  </g>
 </svg>

@@ -44,7 +44,7 @@ export default function IssueDetails() {
   useEffect(() => {
     mounted.current = true;
     load();
-    if (socketCtx.ready) socketCtx.joinIssueRoom(id);
+    socketCtx.joinIssueRoom(id);
 
     const cleanups = [];
     for (const ev of ['issue:status', 'issue:vote', 'issue:comment', 'issue:comment-removed']) {

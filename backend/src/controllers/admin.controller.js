@@ -10,8 +10,14 @@ import { changeStatus, assignIssueOfficerToIssue } from '../services/issue.servi
 import { withAudit } from '../repositories/audit.repository.js';
 import { slaViolations, slaWarnings } from '../services/sla.service.js';
 import { getIssue } from '../repositories/issue.repository.js';
-import { hashPassword } from '../utils/password.js';
+import { hashPassword, validatePasswordStrength } from '../utils/password.js';
 import { query } from '../config/database.js';
+import { adminMap as adminMapController } from './issue.controller.js';
+import * as issueService from '../services/issue.service.js';
+import * as reviewService from '../services/review.service.js';
+import * as abuseService from '../services/abuse.service.js';
+
+export const adminMap = adminMapController;
 
 export const users = asyncHandler(async (req, res) => {
   const result = await listUsers({
@@ -25,9 +31,12 @@ export const users = asyncHandler(async (req, res) => {
 export const createOfficer = asyncHandler(async (req, res) => {
   const existing = await getUserByEmail(req.body.email?.toLowerCase());
   if (existing) throw new AppError(409, 'User already exists');
+  if (!req.body.password) throw new AppError(422, 'A temporary officer password is required');
+  const passwordError = validatePasswordStrength(req.body.password);
+  if (passwordError) throw new AppError(422, passwordError);
 
-  const passwordHash = await hashPassword(req.body.password || 'Officer@123456');
-  const [result] = await query(
+  const passwordHash = await hashPassword(req.body.password);
+  const result = await query(
     `INSERT INTO users (full_name, email, phone, password_hash, city) VALUES (?, ?, ?, ?, ?)`,
     [req.body.full_name, req.body.email.toLowerCase(), req.body.phone ?? null, passwordHash, req.body.city ?? null],
   );
@@ -232,15 +241,15 @@ export const moderateIssueReport = asyncHandler(async (req, res) => {
   const { action, reason, issue_id } = req.body;
   if (action === 'archive') {
     if (!reason?.trim()) throw new AppError(422, 'Archive reason is required');
-    await issueService.archiveIssue({
+    await reviewService.archiveIssue({
       issueId: issue_id,
       actorId: req.user.id,
       req,
       reason: reason.trim(),
     });
-    await commentService.resolveReport(req.params.reportId, req.user.id, 'RESOLVED');
+    await resolveReport(req.params.reportId, req.user.id, 'RESOLVED');
   } else {
-    await commentService.resolveReport(req.params.reportId, req.user.id, action === 'dismiss' ? 'DISMISSED' : 'RESOLVED');
+    await resolveReport(req.params.reportId, req.user.id, action === 'dismiss' ? 'DISMISSED' : 'RESOLVED');
   }
   await withAudit({
     req,
@@ -270,7 +279,7 @@ export const escalationsAdmin = asyncHandler(async (req, res) => {
 /** Acknowledge an escalation (admin). */
 export const acknowledgeEscalation = asyncHandler(async (req, res) => {
   const result = await reviewService.acknowledgeEscalation({
-    escalationId: req.params.id,
+    escalationId: req.params.escalationId,
     actorId: req.user.id,
     req,
   });
@@ -279,17 +288,18 @@ export const acknowledgeEscalation = asyncHandler(async (req, res) => {
 
 /** Report detail with abuse/trust signals (shows WHY). */
 export const abuseSignalsForUser = asyncHandler(async (req, res) => {
-  const result = await abuseService.reporterTrustDetail(req.params.id);
+  const result = await abuseService.reporterTrust(req.params.id);
   success(res, 200, 'Reporter trust fetched', result);
 });
 
 /** Issue report → also record HOW often a reporter’s content gets flagged. */
 export const issuesForUserAdmin = asyncHandler(async (req, res) => {
   const { page = 1, limit = 50 } = req.query;
-  const result = await issueService.listIssuesForAdminByReporter({
-    userId: req.params.id,
-    page,
-    limit,
+  const result = await issueService.listIssuesWithFilters({
+    reporterId: req.params.id,
+    page: Math.max(Number(page) || 1, 1),
+    limit: Math.min(Math.max(Number(limit) || 50, 1), 100),
+    sort: 'newest',
   });
   success(res, 200, 'Issues fetched', result);
 });
@@ -308,7 +318,7 @@ export const categoriesAdmin = asyncHandler(async (req, res) => {
 
 export const createCategory = asyncHandler(async (req, res) => {
   const slug = req.body.slug || req.body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const [result] = await query(
+  const result = await query(
     `INSERT INTO issue_categories (name, slug, severity, department_id, description)
      VALUES (?, ?, ?, ?, ?)`,
     [req.body.name, slug, req.body.severity ?? 3, req.body.department_id ?? null, req.body.description ?? null],
@@ -361,7 +371,7 @@ export const adminIssueList = asyncHandler(async (req, res) => {
     `SELECT COUNT(*) AS total,
             SUM(status = 'RESOLVED') AS resolved,
             SUM(status = 'IN_PROGRESS') AS inProgress,
-            SUM(status = 'OPEN') AS open,
+            SUM(status IN ('SUBMITTED','UNDER_REVIEW','ASSIGNED','IN_PROGRESS','REOPENED')) AS open,
             SUM(status = 'SUBMITTED') AS submitted
      FROM issues`,
   ))[0];

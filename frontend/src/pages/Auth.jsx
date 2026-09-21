@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { MapPin } from 'lucide-react';
+import { ArrowRight, HeartHandshake, MapPin, ShieldCheck } from 'lucide-react';
+import Illustration from '../components/common/Illustration';
 import { useAuth } from '../context/AuthContext';
 import { Button, Spinner } from '../components/common/Button';
 import { useToast } from '../components/common/Toast';
@@ -9,7 +9,7 @@ import { apiErrorMessage } from '../services/api';
 
 export default function Auth() {
   const [params] = useSearchParams();
-  const mode = params.get('mode') || 'login';
+  const mode = params.get('mode') === 'register' ? 'register' : 'login';
   const { login, register } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
@@ -24,7 +24,7 @@ export default function Auth() {
         await login({ email: values.email, password: values.password });
         toast.success('Welcome back!');
       }
-      navigate('/');
+      navigate('/location');
     } catch (err) {
       const serverErrors = err?.response?.data?.errors;
       if (Array.isArray(serverErrors) && serverErrors.length) {
@@ -34,8 +34,7 @@ export default function Auth() {
         }
         return;
       }
-      const msg = apiErrorMessage(err);
-      toast.error(err, msg);
+      toast.error(err, apiErrorMessage(err));
     }
   };
 
@@ -44,92 +43,101 @@ export default function Auth() {
     navigate(`/auth?mode=${next}`, { replace: true });
   };
 
+  const demoLogin = async (email, password) => {
+    try {
+      await login({ email, password });
+      toast.success('Signed in to the demo account');
+      navigate('/location');
+    } catch (err) {
+      toast.error(err, 'Could not sign in to the demo account');
+    }
+  };
+
   return (
-    <div className="flex min-h-[85vh] items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md">
-        <div className="mb-6 text-center">
-          <Link to="/" className="inline-flex items-center gap-2 font-bold text-slate-900">
-            <MapPin className="h-7 w-7 text-brand-600" /> Civic<span className="text-brand-600">Issues</span>
-          </Link>
-          <h1 className="mt-3 text-2xl font-bold text-slate-900">
-            {mode === 'register' ? 'Create your account' : 'Log in'}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {mode === 'register'
-              ? 'Join your community and report civic problems.'
-              : 'Report, support and track civic issues.'}
-          </p>
+    <div className="relative min-h-[calc(100vh-4.5rem)] overflow-hidden bg-gradient-to-br from-white via-brand-50/60 to-white">
+      <div className="absolute -right-20 top-8 h-72 w-72 rounded-full bg-brand-100/50 blur-3xl" />
+      <div className="page-shell grid min-h-[calc(100vh-4.5rem)] items-center gap-10 py-10 lg:grid-cols-2 lg:py-14">
+        <div className="order-1 mx-auto w-full max-w-lg lg:order-2">
+          <div className="mb-7">
+            <Link to="/" className="inline-flex items-center gap-2 font-extrabold text-slate-900">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white"><HeartHandshake className="h-5 w-5" /></span>
+              <span>Jana<span className="text-brand-600">Setu</span></span>
+            </Link>
+            <span className="section-kicker mt-6"> {mode === 'register' ? 'Join your community' : 'Welcome back'}</span>
+            <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">
+              {mode === 'register' ? 'Create your JanaSetu account' : 'Log in to JanaSetu'}
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {mode === 'register' ? 'Join neighbours helping build a cleaner, safer and more responsive city.' : 'Continue reporting, supporting and tracking issues in your community.'}
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="card space-y-4 p-6 sm:p-7">
+            {mode === 'register' && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Full name" error={errors.fullName?.message}><input id="fullName" className="input" placeholder="Rohan Sharma" {...field('fullName', { required: 'Full name is required' })} /></Field>
+                <Field label="Phone (optional)"><input id="phone" className="input" placeholder="+91 98765 43210" {...field('phone')} /></Field>
+                <Field label="City"><input id="city" className="input" placeholder="Dehradun" {...field('city')} /></Field>
+                <Field label="Ward / Area"><input id="ward" className="input" placeholder="Raipur" {...field('ward')} /></Field>
+              </div>
+            )}
+            <Field label="Email" error={errors.email?.message}>
+              <input id="email" type="email" className="input" placeholder="you@example.com" {...field('email', { required: 'Email is required' })} />
+            </Field>
+            <Field label="Password" error={errors.password?.message}>
+              <input id="password" type="password" className="input" placeholder="••••••••" {...field('password', { required: 'Password is required', minLength: { value: 8, message: 'At least 8 characters' } })} />
+            </Field>
+            {mode === 'register' && (
+              <Field label="Confirm password" error={errors.confirmPassword?.message}>
+                <input id="confirmPassword" type="password" className="input" placeholder="••••••••" {...field('confirmPassword', { required: 'Please confirm your password', validate: (v) => v === watch('password') || 'Passwords do not match' })} />
+              </Field>
+            )}
+            <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? <Spinner label="" className="py-0" /> : <>{mode === 'register' ? 'Create account' : 'Log in'} <ArrowRight className="h-4 w-4" /></>}
+            </Button>
+            <p className="text-center text-sm text-slate-600">
+              {mode === 'register' ? 'Already have an account?' : 'New to JanaSetu?'}{' '}
+              <button type="button" className="font-semibold text-brand-600 hover:underline" onClick={() => switchMode(mode === 'register' ? 'login' : 'register')}>
+                {mode === 'register' ? 'Log in' : 'Create an account'}
+              </button>
+            </p>
+          </form>
+
+          {mode === 'login' && (
+            <section className="mt-5 rounded-2xl border border-brand-100 bg-brand-50/70 p-5">
+              <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900"> Demo access</h2>
+              <p className="mt-1 text-xs leading-5 text-slate-500">Explore pre-seeded civic data without creating an account.</p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                <Button variant="secondary" disabled={isSubmitting} onClick={() => demoLogin('citizen@janasetu.demo', 'Demo@123')}><MapPin className="h-4 w-4" /> Explore as Citizen</Button>
+                <Button variant="secondary" disabled={isSubmitting} onClick={() => demoLogin('admin@janasetu.demo', 'Demo@123')}><ShieldCheck className="h-4 w-4" /> Explore as Admin</Button>
+              </div>
+              <p className="mt-3 text-[11px] text-slate-500">Citizen: citizen@janasetu.demo · Admin: admin@janasetu.demo · Password: Demo@123</p>
+            </section>
+          )}
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="card space-y-4 p-6">
-          {mode === 'register' && (
-            <>
-              <div>
-                <label className="label" htmlFor="fullName">Full name</label>
-                <input id="fullName" className="input" placeholder="e.g. Rohan Sharma"
-                  {...field('fullName', { required: 'Full name is required' })} />
-                {errors.fullName && <p className="mt-1 text-xs text-rose-600">{errors.fullName.message}</p>}
-              </div>
-              <div>
-                <label className="label" htmlFor="phone">Phone <span className="text-slate-400">(optional)</span></label>
-                <input id="phone" className="input" placeholder="+91 98765 43210"
-                  {...field('phone')} />
-              </div>
-              <div>
-                <label className="label" htmlFor="city">City</label>
-                <input id="city" className="input" placeholder="Dehradun"
-                  {...field('city')} />
-              </div>
-              <div>
-                <label className="label" htmlFor="ward">Ward / Area</label>
-                <input id="ward" className="input" placeholder="Raipur"
-                  {...field('ward')} />
-              </div>
-            </>
-          )}
-
-          <div>
-            <label className="label" htmlFor="email">Email</label>
-            <input id="email" type="email" className="input" placeholder="you@example.com"
-              {...field('email', { required: 'Email is required' })} />
-            {errors.email && <p className="mt-1 text-xs text-rose-600">{errors.email.message}</p>}
+        <div className="order-2 hidden lg:order-1 lg:block">
+          <div className="relative mx-auto max-w-xl">
+            <div className="absolute inset-12 rounded-full bg-brand-100/70 blur-3xl" />
+            <Illustration name={mode === 'register' ? 'signup' : 'login'} alt={mode === 'register' ? 'Citizen joining the JanaSetu community' : 'Citizen accessing digital civic services'} eager className="illustration-float relative w-full" />
           </div>
-
-          <div>
-            <label className="label" htmlFor="password">Password</label>
-            <input id="password" type="password" className="input" placeholder="••••••••"
-              {...field('password', { required: 'Password is required', minLength: { value: 8, message: 'At least 8 characters' } })} />
-            {errors.password && <p className="mt-1 text-xs text-rose-600">{errors.password.message}</p>}
+          <div className="mx-auto -mt-5 max-w-md rounded-2xl bg-white/80 p-5 text-center shadow-soft backdrop-blur">
+            <p className="font-bold text-slate-900">Civic action, made approachable.</p>
+            <p className="mt-1 text-sm leading-6 text-slate-500">One trusted place to report local problems and see what happens next.</p>
           </div>
-
-          {mode === 'register' && (
-            <div>
-              <label className="label" htmlFor="confirmPassword">Confirm password</label>
-              <input id="confirmPassword" type="password" className="input" placeholder="••••••••"
-                {...field('confirmPassword', {
-                  required: 'Please confirm your password',
-                  validate: (v) => v === watch('password') || 'Passwords do not match',
-                })} />
-              {errors.confirmPassword && <p className="mt-1 text-xs text-rose-600">{errors.confirmPassword.message}</p>}
-            </div>
-          )}
-
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? <Spinner label="" className="py-0" /> : mode === 'register' ? 'Create account' : 'Log in'}
-          </Button>
-        </form>
-
-        <p className="mt-4 text-center text-sm text-slate-600">
-          {mode === 'register' ? 'Already have an account?' : 'New to CivicIssues?'}{' '}
-          <button
-            className="font-medium text-brand-600 hover:underline"
-            onClick={() => switchMode(mode === 'register' ? 'login' : 'register')}
-          >
-            {mode === 'register' ? 'Log in' : 'Create an account'}
-          </button>
-        </p>
-        {toast.node}
+        </div>
       </div>
+      {toast.node}
+    </div>
+  );
+}
+
+function Field({ label, error, children }) {
+  return (
+    <div>
+      <label className="label" htmlFor={children.props.id}>{label}</label>
+      {children}
+      {error && <p className="mt-1 text-xs font-medium text-rose-600">{error}</p>}
     </div>
   );
 }

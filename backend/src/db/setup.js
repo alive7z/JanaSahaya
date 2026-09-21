@@ -161,6 +161,28 @@ async function seed(conn) {
     );
     logger.info('Example officer seeded: officer@civic.gov / Officer@123456');
   }
+
+  const demoAccounts = [
+    ['Citizen Demo', 'citizen@janasetu.demo', 'Demo@123', 'CITIZEN', 'Dehradun', null],
+    ['Admin Demo', 'admin@janasetu.demo', 'Demo@123', 'ADMIN', 'Dehradun', null],
+  ];
+  for (const [fullName, email, password, roleName, city, phone] of demoAccounts) {
+    const [existing] = await conn.query('SELECT id FROM users WHERE email = ?', [email]);
+    if (existing.length === 0) {
+      const passwordHash = await hashPassword(password);
+      const [insertRes] = await conn.query(
+        `INSERT INTO users (full_name, email, phone, password_hash, city)
+         VALUES (?, ?, ?, ?, ?)`,
+        [fullName, email, phone, passwordHash, city],
+      );
+      const [roleRows] = await conn.query('SELECT id FROM roles WHERE name = ?', [roleName]);
+      await conn.query(
+        'INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)',
+        [insertRes.insertId, roleRows[0].id],
+      );
+      logger.info('Demo %s seeded: %s', roleName.toLowerCase(), email);
+    }
+  }
 }
 
 async function main() {

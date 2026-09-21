@@ -4,7 +4,6 @@ import {
   ArrowRight, Camera, CheckCircle2, Construction, Droplets, LampDesk, MapPinned,
   Route, ShieldCheck, Trash2, Waves, Wrench,
 } from 'lucide-react';
-import Illustration from '../components/common/Illustration';
 import IssueCard from '../components/issues/IssueCard';
 import { EmptyState, Spinner } from '../components/common/Button';
 import { fetchIssues } from '../services/issues';
@@ -19,9 +18,9 @@ const STEPS = [
 const CATEGORIES = [
   { title: 'Potholes', body: 'Unsafe road damage and surface hazards.', icon: Construction, tone: 'bg-amber-50 text-amber-700' },
   { title: 'Garbage', body: 'Waste collection and illegal dumping.', icon: Trash2, tone: 'bg-emerald-50 text-emerald-700' },
-  { title: 'Street Lights', body: 'Broken or unlit public lighting.', icon: LampDesk, tone: 'bg-indigo-50 text-indigo-700' },
-  { title: 'Water Leakage', body: 'Pipe leaks and water supply issues.', icon: Droplets, tone: 'bg-cyan-50 text-cyan-700' },
-  { title: 'Drainage', body: 'Blocked drains and waterlogging.', icon: Waves, tone: 'bg-blue-50 text-blue-700' },
+  { title: 'Street Lights', body: 'Broken or unlit public lighting.', icon: LampDesk, tone: 'bg-lime-50 text-lime-700' },
+  { title: 'Water Leakage', body: 'Pipe leaks and water supply issues.', icon: Droplets, tone: 'bg-teal-50 text-teal-700' },
+  { title: 'Drainage', body: 'Blocked drains and waterlogging.', icon: Waves, tone: 'bg-green-50 text-green-700' },
   { title: 'Roads', body: 'Damaged roads, signs and crossings.', icon: Route, tone: 'bg-orange-50 text-orange-700' },
   { title: 'Public Safety', body: 'Hazards that need urgent attention.', icon: ShieldCheck, tone: 'bg-rose-50 text-rose-700' },
   { title: 'Other Civic Issues', body: 'Anything else affecting your area.', icon: Wrench, tone: 'bg-violet-50 text-violet-700' },
@@ -44,9 +43,8 @@ export default function Home() {
         <div className="absolute right-0 top-0 -z-10 h-72 w-72 opacity-50 dot-pattern" />
         <div className="page-shell grid min-h-[650px] items-center gap-10 py-14 lg:grid-cols-[0.92fr_1.08fr] lg:py-20">
           <div className="reveal max-w-2xl">
-            <span className="section-kicker"> Citizen-powered change</span>
             <h1 className="mt-6 text-5xl font-black leading-[1.05] tracking-[-0.04em] text-slate-950 sm:text-6xl lg:text-7xl">
-              Jana<span className="text-brand-600">Setu</span>
+              <span className="text-brand-600">JanaSahaya</span>
             </h1>
             <p className="mt-4 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl">
               Your Voice. Your City. Better Together.
@@ -58,7 +56,7 @@ export default function Home() {
               <Link to={isAuthenticated ? '/report' : '/auth?mode=register'} className="btn-primary !px-6 !py-3.5">
                 Report an Issue <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link to="/issues" className="btn-secondary !px-6 !py-3.5">Explore JanaSetu</Link>
+              <Link to="/issues" className="btn-secondary !px-6 !py-3.5">Explore JanaSahaya</Link>
             </div>
             <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium text-slate-600">
               <span className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600" /> Transparent tracking</span>
@@ -67,7 +65,15 @@ export default function Home() {
           </div>
           <div className="relative mx-auto w-full max-w-2xl lg:max-w-none">
             <div className="absolute inset-x-12 bottom-6 h-20 rounded-[50%] bg-brand-200/40 blur-2xl" />
-            <Illustration name="hero" alt="Citizen reporting a civic issue in a clean modern city" eager className="illustration-float relative w-full" />
+            <img
+              src="/images/citizen-dashboard.png"
+              alt="Citizen reporting a garbage issue through JanaSahaya"
+              width="1536"
+              height="1024"
+              loading="eager"
+              decoding="async"
+              className="illustration-float relative w-full rounded-3xl shadow-soft"
+            />
           </div>
         </div>
       </section>
@@ -75,7 +81,7 @@ export default function Home() {
       <section className="page-shell py-16 sm:py-20">
         <div className="mx-auto max-w-2xl text-center">
           <span className="section-kicker">Simple by design</span>
-          <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">How JanaSetu works</h2>
+          <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">How JanaSahaya works</h2>
           <p className="mt-3 text-slate-600">A clear path from a citizen report to an accountable resolution.</p>
         </div>
         <div className="relative mt-10 grid gap-5 md:grid-cols-3">
@@ -101,7 +107,7 @@ export default function Home() {
               <span className="section-kicker">Civic services</span>
               <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950">What can you report?</h2>
             </div>
-            <p className="max-w-md text-sm leading-6 text-slate-600">Choose the closest category. JanaSetu routes your report to the responsible department.</p>
+            <p className="max-w-md text-sm leading-6 text-slate-600">Choose the closest category. JanaSahaya routes your report to the responsible department.</p>
           </div>
           <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {CATEGORIES.map(({ title, body, icon: Icon, tone }) => (

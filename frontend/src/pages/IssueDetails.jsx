@@ -4,7 +4,7 @@ import { MapPin, Calendar, ArrowLeft, Building2, User } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Spinner, Button } from '../components/common/Button';
+import { EmptyState, Spinner, Button } from '../components/common/Button';
 import { StatusBadge, PriorityBadge } from '../components/common/Badge';
 import { VoteButton, FollowButton } from '../components/issues/VoteButton';
 import PriorityExplanation from '../components/issues/PriorityExplanation';
@@ -60,11 +60,13 @@ export default function IssueDetails() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-20 text-center">
-        <p className="text-lg font-medium text-slate-700">{error}</p>
-        <button className="btn-secondary mt-4" onClick={() => navigate('/issues')}>
-          <ArrowLeft className="h-4 w-4" /> Back to issues
-        </button>
+      <div className="mx-auto max-w-3xl px-4 py-16">
+        <EmptyState
+          type="network"
+          title="We couldn’t open this report"
+          body={error}
+          action={<button className="btn-secondary" onClick={() => navigate('/issues')}><ArrowLeft className="h-4 w-4" /> Back to issues</button>}
+        />
       </div>
     );
   }

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import mysql from 'mysql2/promise';
 import env from '../config/env.js';
+import { buildSslConfig } from '../config/ssl.js';
 import logger from '../utils/logger.js';
 import { hashPassword } from '../utils/password.js';
 
@@ -16,7 +17,10 @@ async function runSchema(conn) {
     .map((s) => s.trim())
     .filter(Boolean);
   for (const stmt of statements) {
-    if (stmt.includes('CREATE DATABASE')) continue;
+    // The managed database (e.g. Aiven defaultdb) already exists and the app
+    // account has no CREATE DATABASE privilege, so skip database-level statements.
+    if (/^\s*CREATE\s+DATABASE\b/i.test(stmt)) continue;
+    if (/^\s*USE\b/i.test(stmt)) continue;
     await conn.query(stmt);
   }
   await conn.query(
@@ -222,19 +226,24 @@ async function seed(conn) {
 }
 
 async function main() {
+  logger.info(
+    'Connecting to MySQL at %s:%s (database: %s)',
+    env.db.host,
+    env.db.port,
+    env.db.database,
+  );
   const conn = await mysql.createConnection({
     host: env.db.host,
     port: env.db.port,
     user: env.db.user,
     password: env.db.password,
+    database: env.db.database,
+    ssl: buildSslConfig(),
     multipleStatements: false,
   });
 
   try {
-    await conn.query(
-      `CREATE DATABASE IF NOT EXISTS \`${env.db.database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
-    );
-    await conn.changeUser({ database: env.db.database });
+    logger.info('Database connection established');
     await runSchema(conn);
     await runMigrations(conn);
     await seed(conn);
@@ -245,6 +254,13 @@ async function main() {
 }
 
 main().catch((err) => {
-  logger.error('Database setup failed: %s', err.message);
+  logger.error(
+    { err },
+    'Database setup failed for %s:%s/%s: %s',
+    env.db.host,
+    env.db.port,
+    env.db.database,
+    err.message,
+  );
   process.exit(1);
 });

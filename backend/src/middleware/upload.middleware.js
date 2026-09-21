@@ -110,12 +110,13 @@ export async function verifyImageMagic(req, _res, next) {
       const detected = await detectMagic(f.path);
       const expectedMagic = MIME_TO_MAGIC_NAME.get(f.mimetype);
       if (!expectedMagic || detected !== expectedMagic) {
-        await fsp.unlink(f.path).catch(() => {});
+        await Promise.all(files.map((file) => fsp.unlink(file.path).catch(() => {})));
         return next(new AppError(400, `File content does not match its declared type (${f.originalname})`));
       }
     }
     next();
   } catch (err) {
+    await Promise.all(files.map((file) => fsp.unlink(file.path).catch(() => {})));
     next(err);
   }
 }

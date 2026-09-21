@@ -36,7 +36,7 @@ router.get('/sla/status', admin.slaStatus);
 router.patch('/sla/:id', admin.updateSlaRule);
 
 router.get('/moderation/reports', admin.moderation);
-router.post('/moderation/reports/:reportId', admin.moderateCommentonti);
+router.post('/moderation/reports/:reportId', admin.moderateComment);
 router.post('/moderation/reports/:reportId/moderate', admin.moderateIssueReport);
 
 router.get('/escalations', admin.escalationsAdmin);

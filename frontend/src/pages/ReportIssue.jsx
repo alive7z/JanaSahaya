@@ -9,7 +9,7 @@ import { useToast } from '../components/common/Toast';
 import { useAuth } from '../context/AuthContext';
 import { fetchMeta } from '../services/meta';
 import { createIssue, checkDuplicates } from '../services/issues';
-import { getUserLocation, reverseGeocode } from '../utils/geo';
+import { reverseGeocode } from '../utils/geo';
 import { DEFAULT_COORDS } from '../constants';
 import Illustration from '../components/common/Illustration';
 
@@ -32,16 +32,17 @@ export default function ReportIssue() {
 
   useEffect(() => {
     fetchMeta().then((m) => setMeta(m)).catch(() => {});
-    getUserLocation().then((p) => {
-      if (p?.ok) {
-        const next = { ...loc, latitude: p.latitude, longitude: p.longitude };
-        setLoc({ ...next });
-        reverseGeocode(p.latitude, p.longitude).then((g) => {
-          setLoc((prev) => ({ ...prev, address: g.address, city: g.city }));
+    try {
+      const cached = JSON.parse(sessionStorage.getItem('janasetu:coords'));
+      if (Number.isFinite(cached?.latitude) && Number.isFinite(cached?.longitude)) {
+        setLoc({ ...cached, locationSource: 'current_location' });
+        reverseGeocode(cached.latitude, cached.longitude).then((result) => {
+          setLoc((previous) => ({ ...previous, address: result.address, city: result.city }));
         });
       }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    } catch {
+      sessionStorage.removeItem('janasetu:coords');
+    }
   }, []);
 
   const effectiveLoc = loc || defaultLoc;
@@ -91,6 +92,7 @@ export default function ReportIssue() {
         categoryId: Number(values.categoryId),
         latitude: loc.latitude,
         longitude: loc.longitude,
+        locationSource: loc.locationSource,
         address: loc.address || '',
         city: loc.city || values.city || user?.city || '',
         ward: values.ward || '',
@@ -219,6 +221,7 @@ export default function ReportIssue() {
             <LocationPicker
               lat={effectiveLoc.latitude}
               lng={effectiveLoc.longitude}
+              selected={Boolean(loc)}
               onChange={(p) => setLoc((prev) => ({ ...(prev || {}), ...p }))}
             />
             {loc?.city && <p className="mt-1 text-xs text-slate-500">Detected: {loc.city}</p>}

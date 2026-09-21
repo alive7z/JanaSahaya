@@ -1,4 +1,5 @@
 import { query, getOne } from '../config/database.js';
+import { storedUploadPath } from '../utils/uploads.js';
 
 export const ISSUE_BASE_SELECT = `
   SELECT i.*,
@@ -18,9 +19,9 @@ export async function createIssue({ issue }) {
   const result = await query(
     `INSERT INTO issues (
        title, description, category_id, reporter_id,
-       latitude, longitude, address, city, ward,
+       latitude, longitude, location_source, address, city, ward,
        status, priority, priority_score, resolution_deadline, last_activity_at
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       issue.title,
       issue.description,
@@ -28,6 +29,7 @@ export async function createIssue({ issue }) {
       issue.reporterId,
       issue.latitude,
       issue.longitude,
+      issue.locationSource ?? 'map',
       issue.address ?? null,
       issue.city ?? null,
       issue.ward ?? null,
@@ -348,7 +350,7 @@ export async function insertIssueImages(issueId, files, { resolutionEvidence = f
     await query(
       `INSERT INTO issue_images (issue_id, filename, filepath, mime_type, size, is_resolution_evidence, uploaded_by)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [issueId, f.filename, f.path, f.mimetype, f.size, resolutionEvidence ? 1 : 0, uploadedBy],
+      [issueId, f.filename, storedUploadPath(f.path), f.mimetype, f.size, resolutionEvidence ? 1 : 0, uploadedBy],
     );
   }
 }

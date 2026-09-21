@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import * as authService from '../services/auth';
 import { useToast } from '../components/common/Toast';
 import { Button, Spinner } from '../components/common/Button';
+import { demoAvatar } from '../constants';
 
 const MAX_BIO = 500;
 
@@ -87,9 +88,17 @@ export default function Profile() {
       <section className="mt-6">
         <div className="card p-6">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 text-brand-600">
-              <Camera className="h-7 w-7" />
-            </div>
+            {demoAvatar(localUser.email) ? (
+              <img
+                src={demoAvatar(localUser.email)}
+                alt={localUser.full_name}
+                className="h-16 w-16 rounded-full object-cover ring-2 ring-brand-100"
+              />
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 text-brand-600">
+                <Camera className="h-7 w-7" />
+              </div>
+            )}
             <div>
               <p className="text-lg font-semibold text-slate-900">{localUser.full_name}</p>
               <p className="text-sm text-slate-500">{localUser.email}</p>

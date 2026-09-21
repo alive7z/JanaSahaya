@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Bell, HeartHandshake, LogOut, MapPin, Menu, Plus, User, X } from 'lucide-react';
+import { Bell, LogOut, Menu, Plus, User, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { clsx } from '../utils/formatters';
+import { demoAvatar } from '../constants';
 
 const LINKS = [
   { to: '/', label: 'Home', end: true },
@@ -76,7 +77,11 @@ function AuthArea({ onClick = () => {} }) {
         className="btn-secondary p-2"
         aria-label="Profile"
       >
-        <User className="h-4 w-4" />
+        {demoAvatar(user?.email) ? (
+          <img src={demoAvatar(user?.email)} alt="" className="h-4 w-4 shrink-0 rounded-full object-cover" />
+        ) : (
+          <User className="h-4 w-4" />
+        )}
         <span className="hidden sm:inline">{user?.full_name?.split(' ')[0]}</span>
       </Link>
       <button
@@ -102,10 +107,8 @@ export default function RootLayout() {
       <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl">
         <div className="page-shell flex h-[4.5rem] items-center justify-between">
           <Link to="/" className="group flex items-center gap-2.5 font-extrabold tracking-tight text-slate-900">
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-lg shadow-brand-600/20 transition group-hover:-rotate-3">
-              <HeartHandshake className="h-5 w-5" />
-            </span>
-            <span className="text-lg">Jana<span className="text-brand-600">Setu</span></span>
+            <img src="/janasahaya-mark.svg" alt="" width="40" height="40" className="h-10 w-10 shadow-lg shadow-brand-600/20 transition group-hover:-rotate-3" />
+            <span className="text-lg text-brand-600">JanaSahaya</span>
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
@@ -155,7 +158,7 @@ export default function RootLayout() {
         <div className="page-shell flex flex-col justify-between gap-6 py-9 sm:flex-row sm:items-center">
           <div>
             <Link to="/" className="inline-flex items-center gap-2 font-bold text-slate-900">
-              <MapPin className="h-5 w-5 text-brand-600" /> JanaSetu
+              <img src="/janasahaya-mark.svg" alt="" width="28" height="28" className="h-7 w-7" /> JanaSahaya
             </Link>
             <p className="mt-2 max-w-md text-sm text-slate-500">
               A citizen-first bridge between communities and civic administration.
